@@ -1,0 +1,680 @@
+{
+ "categories": [
+  {
+   "id": 101,
+   "name": "عدد البطارية",
+   "slug": "battery",
+   "parent": 0,
+   "count": 0
+  },
+  {
+   "id": 102,
+   "name": "عدد كهربائية",
+   "slug": "electric",
+   "parent": 0,
+   "count": 0
+  },
+  {
+   "id": 103,
+   "name": "عدد الوقود",
+   "slug": "fuel",
+   "parent": 0,
+   "count": 0
+  },
+  {
+   "id": 104,
+   "name": "عدد الهواء",
+   "slug": "air",
+   "parent": 0,
+   "count": 0
+  },
+  {
+   "id": 105,
+   "name": "عدد يدوية",
+   "slug": "manual",
+   "parent": 0,
+   "count": 0
+  },
+  {
+   "id": 106,
+   "name": "إكسسوارات",
+   "slug": "accessories",
+   "parent": 0,
+   "count": 0
+  }
+ ],
+ "products": [
+  {
+   "id": 1,
+   "name": "مثقب شحن لاسلكي 20V مع بطاريتين",
+   "sku": "CFX-1001",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "185000000",
+    "regular_price": "220000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 101,
+     "name": "عدد البطارية",
+     "slug": "battery"
+    }
+   ],
+   "specs": [
+    [
+     "الجهد",
+     "20 فولت"
+    ],
+    [
+     "البطارية",
+     "2 × 2.0Ah ليثيوم"
+    ],
+    [
+     "العزم",
+     "45 نيوتن.متر"
+    ],
+    [
+     "السرعات",
+     "2"
+    ]
+   ]
+  },
+  {
+   "id": 2,
+   "name": "مفك براغي شحن 12V مدمج",
+   "sku": "CFX-1002",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "95000000",
+    "regular_price": "95000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 101,
+     "name": "عدد البطارية",
+     "slug": "battery"
+    }
+   ],
+   "specs": [
+    [
+     "الجهد",
+     "12 فولت"
+    ],
+    [
+     "العزم",
+     "25 نيوتن.متر"
+    ],
+    [
+     "الوزن",
+     "0.9 كغ"
+    ]
+   ]
+  },
+  {
+   "id": 3,
+   "name": "جلاخة شحن 115 ملم بدون فحمات",
+   "sku": "CFX-1003",
+   "featured": false,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "210000000",
+    "regular_price": "245000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 101,
+     "name": "عدد البطارية",
+     "slug": "battery"
+    }
+   ],
+   "specs": [
+    [
+     "الجهد",
+     "20 فولت"
+    ],
+    [
+     "قطر القرص",
+     "115 ملم"
+    ],
+    [
+     "المحرك",
+     "بدون فحمات"
+    ]
+   ]
+  },
+  {
+   "id": 4,
+   "name": "مثقب كهربائي دقاق 750 واط",
+   "sku": "CFX-1004",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "16000000",
+    "regular_price": "20000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 102,
+     "name": "عدد كهربائية",
+     "slug": "electric"
+    }
+   ],
+   "specs": [
+    [
+     "الاستطاعة",
+     "750 واط"
+    ],
+    [
+     "رأس المثقب",
+     "13 ملم"
+    ],
+    [
+     "الوظيفة",
+     "ثقب + دق"
+    ]
+   ]
+  },
+  {
+   "id": 5,
+   "name": "جلاخة زاوية 900 واط",
+   "sku": "CFX-1005",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "78000000",
+    "regular_price": "78000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 102,
+     "name": "عدد كهربائية",
+     "slug": "electric"
+    }
+   ],
+   "specs": [
+    [
+     "الاستطاعة",
+     "900 واط"
+    ],
+    [
+     "قطر القرص",
+     "115 ملم"
+    ],
+    [
+     "السرعة",
+     "11000 دورة/د"
+    ]
+   ]
+  },
+  {
+   "id": 6,
+   "name": "منشار دائري 1400 واط",
+   "sku": "CFX-1006",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "165000000",
+    "regular_price": "190000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 102,
+     "name": "عدد كهربائية",
+     "slug": "electric"
+    }
+   ],
+   "specs": [
+    [
+     "الاستطاعة",
+     "1400 واط"
+    ],
+    [
+     "قطر الشفرة",
+     "185 ملم"
+    ],
+    [
+     "عمق القص",
+     "63 ملم"
+    ]
+   ]
+  },
+  {
+   "id": 7,
+   "name": "هيلتي كهربائي SDS-Plus 1050 واط",
+   "sku": "CFX-1007",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "240000000",
+    "regular_price": "240000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 102,
+     "name": "عدد كهربائية",
+     "slug": "electric"
+    }
+   ],
+   "specs": [
+    [
+     "الاستطاعة",
+     "1050 واط"
+    ],
+    [
+     "قوة الضربة",
+     "4 جول"
+    ],
+    [
+     "الأوضاع",
+     "3"
+    ]
+   ]
+  },
+  {
+   "id": 8,
+   "name": "مولدة بنزين 3.5 كيلو واط",
+   "sku": "CFX-1008",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "950000000",
+    "regular_price": "1050000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 103,
+     "name": "عدد الوقود",
+     "slug": "fuel"
+    }
+   ],
+   "specs": [
+    [
+     "الاستطاعة",
+     "3500 واط"
+    ],
+    [
+     "الوقود",
+     "بنزين"
+    ],
+    [
+     "خزان الوقود",
+     "15 لتر"
+    ]
+   ]
+  },
+  {
+   "id": 9,
+   "name": "منشار شجر بنزين 52 سي سي",
+   "sku": "CFX-1009",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "320000000",
+    "regular_price": "320000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 103,
+     "name": "عدد الوقود",
+     "slug": "fuel"
+    }
+   ],
+   "specs": [
+    [
+     "المحرك",
+     "52 سي سي"
+    ],
+    [
+     "طول السيف",
+     "20 إنش"
+    ]
+   ]
+  },
+  {
+   "id": 10,
+   "name": "كمبريسور هواء 50 لتر",
+   "sku": "CFX-1010",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "480000000",
+    "regular_price": "530000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 104,
+     "name": "عدد الهواء",
+     "slug": "air"
+    }
+   ],
+   "specs": [
+    [
+     "الخزان",
+     "50 لتر"
+    ],
+    [
+     "الاستطاعة",
+     "2 حصان"
+    ],
+    [
+     "الضغط",
+     "8 بار"
+    ]
+   ]
+  },
+  {
+   "id": 11,
+   "name": "مسدس دهان هوائي",
+   "sku": "CFX-1011",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "45000000",
+    "regular_price": "45000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 104,
+     "name": "عدد الهواء",
+     "slug": "air"
+    }
+   ],
+   "specs": [
+    [
+     "سعة الوعاء",
+     "600 مل"
+    ],
+    [
+     "فوهة",
+     "1.5 ملم"
+    ]
+   ]
+  },
+  {
+   "id": 12,
+   "name": "طقم مفكات دقيقة 32 قطعة",
+   "sku": "CFX-1012",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "18000000",
+    "regular_price": "22000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 105,
+     "name": "عدد يدوية",
+     "slug": "manual"
+    }
+   ],
+   "specs": [
+    [
+     "عدد القطع",
+     "32"
+    ],
+    [
+     "المادة",
+     "فولاذ CR-V"
+    ]
+   ]
+  },
+  {
+   "id": 13,
+   "name": "طقم مفاتيح ربط 12 قطعة",
+   "sku": "CFX-1013",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "52000000",
+    "regular_price": "52000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 105,
+     "name": "عدد يدوية",
+     "slug": "manual"
+    }
+   ],
+   "specs": [
+    [
+     "المقاسات",
+     "8–19 ملم"
+    ],
+    [
+     "المادة",
+     "كروم فاناديوم"
+    ]
+   ]
+  },
+  {
+   "id": 14,
+   "name": "شنيور ليزر قياس 40 متر",
+   "sku": "CFX-1014",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "69000000",
+    "regular_price": "69000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 105,
+     "name": "عدد يدوية",
+     "slug": "manual"
+    }
+   ],
+   "specs": [
+    [
+     "المدى",
+     "40 متر"
+    ],
+    [
+     "الدقة",
+     "±2 ملم"
+    ]
+   ]
+  },
+  {
+   "id": 15,
+   "name": "بطارية ليثيوم 20V 4.0Ah",
+   "sku": "CFX-1015",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "85000000",
+    "regular_price": "95000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 106,
+     "name": "إكسسوارات",
+     "slug": "accessories"
+    }
+   ],
+   "specs": [
+    [
+     "الجهد",
+     "20 فولت"
+    ],
+    [
+     "السعة",
+     "4.0Ah"
+    ]
+   ]
+  },
+  {
+   "id": 16,
+   "name": "طقم ريش ثقب متنوعة 100 قطعة",
+   "sku": "CFX-1016",
+   "featured": true,
+   "is_in_stock": true,
+   "short_description": "<p>منتج أصلي من كوفيكس مع كفالة لمدة ستة أشهر لدى الوكيل الحصري في سوريا.</p>",
+   "description": "<p>صُمّم ليتحمّل العمل اليومي الشاق في الورش ومواقع البناء، مع توازن ممتاز في اليد وأداء ثابت.</p><ul><li>كفالة 6 أشهر</li><li>قطع غيار وصيانة متوفرة</li><li>أسعار خاصة للتجار</li></ul>",
+   "prices": {
+    "price": "35000000",
+    "regular_price": "35000000",
+    "currency_code": "SYP",
+    "currency_symbol": "ل.س",
+    "currency_minor_unit": 2,
+    "currency_prefix": "",
+    "currency_suffix": " ل.س",
+    "currency_thousand_separator": "."
+   },
+   "images": [],
+   "categories": [
+    {
+     "id": 106,
+     "name": "إكسسوارات",
+     "slug": "accessories"
+    }
+   ],
+   "specs": [
+    [
+     "عدد القطع",
+     "100"
+    ],
+    [
+     "الاستخدام",
+     "خشب، معدن، حجر"
+    ]
+   ]
+  }
+ ]
+}
