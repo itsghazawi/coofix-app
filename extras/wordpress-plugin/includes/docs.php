@@ -120,7 +120,15 @@ td.n b{display:block;font-size:15px}td.n code{display:inline-block;margin-top:4p
 }
 
 add_action('template_redirect', function () {
-    // Signed invoice link sent inside the WhatsApp order (the data travels in the link; nothing is stored).
+    // Short invoice link from the WhatsApp order: /?inv=abc1234
+    if (!empty($_GET['inv']) && preg_match('/^[a-z0-9]{7}$/', (string) $_GET['inv'])) {
+        $d = get_transient('cfx_inv_' . $_GET['inv']);
+        if (is_array($d)) {
+            cfx_invoice_render($d);
+        }
+        wp_die('انتهت صلاحية رابط الفاتورة (تُحفظ الروابط 90 يوماً).', 404);
+    }
+    // Older long signed links (data inside the link).
     if (!empty($_GET['cfx_order'])) {
         $t = sanitize_text_field(wp_unslash($_GET['cfx_order']));
         $parts = explode('.', $t);
@@ -192,9 +200,16 @@ add_action('rest_api_init', function () {
                 'sub' => $clean($in['sub'] ?? '', 40), 'disc' => $clean($in['disc'] ?? '', 40), 'coupons' => $clean($in['coupons'] ?? '', 80),
                 'total' => $clean($in['total'] ?? '', 40), 'note' => '',
             );
-            $b = rtrim(strtr(base64_encode(wp_json_encode($d)), '+/', '-_'), '=');
-            $sig = substr(hash_hmac('sha256', $b, wp_salt('auth')), 0, 32);
-            return array('url' => add_query_arg('cfx_order', $b . '.' . $sig, home_url('/')));
+            // Short link: a tiny record kept 90 days, then removed automatically by WordPress.
+            $chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+            do {
+                $id = '';
+                for ($i = 0; $i < 7; $i++) {
+                    $id .= $chars[random_int(0, strlen($chars) - 1)];
+                }
+            } while (get_transient('cfx_inv_' . $id) !== false);
+            set_transient('cfx_inv_' . $id, $d, 90 * DAY_IN_SECONDS);
+            return array('url' => home_url('/?inv=' . $id));
         },
     ));
 });
