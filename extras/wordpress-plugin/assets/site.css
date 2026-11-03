@@ -657,3 +657,4 @@ body.cfx-skin .cfx-ship label{display:flex;flex-direction:column;gap:5px;font-si
 body.cfx-skin .cfx-ship :is(input,select){width:100%;box-sizing:border-box;border:1px solid #E6E3DD!important;border-radius:14px!important;background:#fff!important;padding:12px 14px!important;min-height:48px;font:500 15px var(--cfx-font)!important;-webkit-appearance:none;appearance:none}
 body.cfx-skin .cfx-ship :is(input,select):focus{border-color:#FAA21B!important;outline:0;box-shadow:0 0 0 3px rgba(250,162,27,.18)}
 body.cfx-skin .cfx-ship-err{color:#D64545;font-weight:700;font-size:13px}
+body.cfx-skin .cfx-wa-order.is-ready{background:#16794A!important;animation:cfxPulse 1.6s infinite}

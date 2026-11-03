@@ -48,7 +48,7 @@ class ReceiptDoc extends StatelessWidget {
     final code = _s(r, 'code');
     final rows = <(String, String)>[
       ('اسم الزبون', _s(r, 'name')),
-      ('رقم الهاتف', _s(r, 'phone')),
+      ('رقم الهاتف', _s(r, 'phone').replaceAll(RegExp(r'[\s-]'), '')),
       ('كود المنتج', _s(r, 'product_code')),
       ('الرقم التسلسلي', _s(r, 'serial')),
       ('الملحقات', r['accessories'] == true ? (_s(r, 'accessories_text').isEmpty ? 'نعم' : _s(r, 'accessories_text')) : 'بدون ملحقات'),

@@ -127,6 +127,12 @@
 
 /* WhatsApp order on the cart page — shipping info is inline; the live cart comes from the Store API */
 (function () {
+  // Open WhatsApp exactly once: phones → same tab (hands over to the app), computers → new tab.
+  function openWA(url) {
+    var touch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    if (touch) { location.href = url; return; }
+    window.open(url, '_blank', 'noopener');
+  }
   // window.cfxOrder is printed after this file (footer), so read it lazily.
   var live = null, KEY = 'cfx_ship';
   function money(v, t) {
@@ -144,9 +150,11 @@
           items: (c.items || []).map(function (it) {
             var n = it.name || '', sku = it.sku || '', m = n.match(/^\s*([A-Za-z0-9][A-Za-z0-9\-_.\/ ]{1,24}?)\s*\|\s*(.+)$/);
             if (!sku && m) { sku = m[1].trim(); n = m[2].trim(); }
-            return { n: n, s: sku, q: it.quantity, p: money(it.prices && it.prices.price, it.prices || t) };
+            var pr = it.prices || t;
+            return { n: n, s: sku, q: it.quantity, p: money(pr.price, pr), t: money((parseInt(pr.price, 10) || 0) * it.quantity, pr) };
           }),
           coupons: (c.coupons || []).map(function (x) { return String(x.code || '').toUpperCase(); }),
+          sub: money(t.total_items, t),
           disc: parseInt(t.total_discount, 10) > 0 ? money(t.total_discount, t) : '',
           total: money(t.total_price, t)
         };
@@ -193,8 +201,34 @@
     }
     L.push('', 'معلومات الشحن:', 'المحافظة: ' + v.gov, 'المنطقة: ' + v.area, 'الاسم: ' + v.name, 'الهاتف: ' + v.phone);
     if (d.footer) L.push('', d.footer);
-    var url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(L.join('\n'));
-    var w = window.open(url, '_blank');
-    if (!w) location.href = url;
+    var text = L.join('\n'), url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(text);
+    var btn = e.target.closest('[data-cfx-order]'), lbl = btn.querySelector('span');
+    // Second tap: the PDF is ready → share it (share must run straight from a tap).
+    if (btn._file) {
+      var f = btn._file; btn._file = null;
+      navigator.share({ files: [f], text: text }).catch(function () {}).then(function () { if (lbl) lbl.textContent = btn.dataset.l || 'اطلب عبر واتساب'; });
+      return;
+    }
+    var canFiles = false;
+    try { canFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.pdf', { type: 'application/pdf' })] })); } catch (x) {}
+    if (!window.cfxInvoicePdf) { openWA(url); return; }
+    if (!btn.dataset.l && lbl) btn.dataset.l = lbl.textContent;
+    if (lbl) lbl.textContent = 'جاري تجهيز الفاتورة…';
+    var dt = now.getFullYear() + '/' + p2(now.getMonth() + 1) + '/' + p2(now.getDate()) + ' — ' + p2(now.getHours()) + ':' + p2(now.getMinutes());
+    window.cfxInvoicePdf({ number: num, date: dt, items: x.items, sub: x.sub || '', disc: x.disc, coupons: x.coupons, total: x.total, hide: d.hide, ship: v, wa: d.waPretty || d.wa, logo: d.logo })
+      .then(function (blob) {
+        var file = new File([blob], 'Coofix-' + num + '.pdf', { type: 'application/pdf' });
+        if (canFiles) {
+          btn._file = file;
+          if (lbl) lbl.textContent = 'الفاتورة جاهزة — اضغط للإرسال على واتساب';
+          btn.classList.add('is-ready');
+        } else {
+          // Computer: download the PDF and open WhatsApp with the order text.
+          var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+          if (lbl) lbl.textContent = btn.dataset.l;
+          openWA(url);
+        }
+      }).catch(function () { if (lbl) lbl.textContent = btn.dataset.l; openWA(url); });
   });
 })();

@@ -46,7 +46,7 @@ add_action('template_redirect', function () {
     $brand = $cfg['general']['app_name'] ?: 'كوفيكس سوريا';
     $tag = $cfg['general']['tagline'] ?: 'الوكيل الحصري والرسمي في سوريا';
     $wa = preg_replace('/\D/', '', $cfg['contact']['whatsapp_orders']);
-    $wa_pretty = strpos($wa, '963') === 0 ? '0' . substr($wa, 3, 3) . ' ' . substr($wa, 6, 3) . ' ' . substr($wa, 9) : $wa;
+    $wa_pretty = strpos($wa, '963') === 0 ? '0' . substr($wa, 3) : $wa;
     $name = trim($order->get_formatted_billing_full_name());
     $addr = implode(' — ', array_filter(array($order->get_billing_state(), $order->get_billing_city(), $order->get_billing_address_1())));
     $date = $order->get_date_created() ? $order->get_date_created()->date_i18n('Y/m/d — H:i') : '';

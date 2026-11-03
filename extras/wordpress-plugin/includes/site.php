@@ -706,6 +706,8 @@ add_action('wp_footer', function () {
         'hide'    => !empty($c['products']['hide_prices']),
         'askCity' => !isset($o['ask_city']) || !empty($o['ask_city']),
         'askPhone'=> !empty($o['ask_phone']),
+        'logo'    => !empty($c['brand']['icon_url']) ? $c['brand']['icon_url'] : COOFIX_APP_URL . 'assets/icon.png',
+        'waPretty'=> (function ($n) { return strpos($n, '963') === 0 ? '0' . substr($n, 3) : $n; })(preg_replace('/\D/', '', $c['contact']['whatsapp_orders'])),
     );
     ?>
     <script>window.cfxOrder=<?php echo wp_json_encode($data); ?>;</script>
@@ -725,3 +727,9 @@ add_filter('gettext', function ($t, $text, $domain) {
     }
     return $t;
 }, 20, 3);
+
+add_action('wp_enqueue_scripts', function () {
+    if (cfx_site_on() && function_exists('is_cart') && is_cart()) {
+        wp_enqueue_script('cfx-invoice-pdf', COOFIX_APP_URL . 'assets/invoice-pdf.js', array(), COOFIX_APP_VERSION, true);
+    }
+}, 30);

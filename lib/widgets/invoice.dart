@@ -103,7 +103,7 @@ class InvoiceDoc extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(48, 28, 48, 0),
           child: Column(children: [
-            Row(children: [info('الزبون', name), const SizedBox(width: 12), info('رقم الهاتف', phone, ltr: true), const SizedBox(width: 12), info('التاريخ', d)]),
+            Row(children: [info('الزبون', name), const SizedBox(width: 12), info('رقم الهاتف', phone.replaceAll(RegExp(r'[\s-]'), ''), ltr: true), const SizedBox(width: 12), info('التاريخ', d)]),
             const SizedBox(height: 12),
             Row(children: [info('العنوان', city, flex: 2), const SizedBox(width: 12), info('طريقة الدفع', 'الدفع عند الاستلام')]),
           ]),
@@ -215,7 +215,7 @@ class InvoiceDoc extends StatelessWidget {
           child: Row(children: [
             Text('شكراً لثقتك بكوفيكس — سنتواصل معك لتأكيد الطلب', style: b(12.5, c: const Color(0xFF4A4F57))),
             const Spacer(),
-            Text('coofix.sy · ${Config.pretty(Config.whatsapp)}', textDirection: TextDirection.ltr, style: b(12.5, c: const Color(0xFF4A4F57), w: FontWeight.w600)),
+            Text('coofix.sy · ${Config.whatsapp.startsWith('963') ? '0${Config.whatsapp.substring(3)}' : Config.whatsapp}', textDirection: TextDirection.ltr, style: b(12.5, c: const Color(0xFF4A4F57), w: FontWeight.w600)),
           ]),
         ),
       ]),
