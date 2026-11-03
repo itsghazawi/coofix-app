@@ -733,3 +733,13 @@ add_action('wp_enqueue_scripts', function () {
         wp_enqueue_script('cfx-invoice-pdf', COOFIX_APP_URL . 'assets/invoice-pdf.js', array(), COOFIX_APP_VERSION, true);
     }
 }, 30);
+
+// Price format for the whole store (site, apps via the Store API): 1,234.50
+add_action('init', function () {
+    if (get_option('cfx_price_format_v') !== '1') {
+        update_option('woocommerce_price_thousand_sep', ',');
+        update_option('woocommerce_price_decimal_sep', '.');
+        update_option('woocommerce_price_num_decimals', '2');
+        update_option('cfx_price_format_v', '1', false);
+    }
+});

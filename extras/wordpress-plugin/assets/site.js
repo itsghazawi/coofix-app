@@ -138,7 +138,7 @@
   function money(v, t) {
     var mu = t.currency_minor_unit || 0, n = (parseInt(v, 10) || 0) / Math.pow(10, mu);
     var p = n.toFixed(mu).split('.'), th = t.currency_thousand_separator || ',', ds = t.currency_decimal_separator || '.';
-    var s = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, th) + (p[1] && /[1-9]/.test(p[1]) ? ds + p[1] : '');
+    var s = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, th) + (p[1] ? ds + p[1] : '');
     return (t.currency_prefix || '') + s + (t.currency_suffix || '');
   }
   function load() {

@@ -25,8 +25,10 @@ class Price {
   final String prefix;
   final String suffix;
   final String thousands;
+  final String decimal;
+  final int decimals;
 
-  const Price({required this.price, required this.regular, this.symbol = 'ل.س', this.prefix = '', this.suffix = ' ل.س', this.thousands = '.'});
+  const Price({required this.price, required this.regular, this.symbol = 'ل.س', this.prefix = '', this.suffix = ' ل.س', this.thousands = ',', this.decimal = '.', this.decimals = 2});
 
   bool get onSale => regular > price && price > 0;
   int get discountPct => onSale ? (((regular - price) / regular) * 100).round() : 0;
@@ -35,25 +37,24 @@ class Price {
   static String labelOverride = '';
   String get unit => labelOverride.isNotEmpty ? labelOverride : (prefix.isNotEmpty ? prefix : suffix).trim();
 
+  /// 1,234.50 — thousands and decimals as set in WooCommerce.
   String num_(num v) {
-    final s = v.round().toString();
-    final b = StringBuffer();
+    final fixed = v.toDouble().toStringAsFixed(decimals);
+    final parts = fixed.split('.');
+    final s = parts[0].replaceAll('-', '');
+    final b = StringBuffer(v < 0 ? '-' : '');
     for (var i = 0; i < s.length; i++) {
       if (i > 0 && (s.length - i) % 3 == 0) b.write(thousands);
       b.write(s[i]);
     }
+    if (decimals > 0 && parts.length > 1) b.write('$decimal${parts[1]}');
     return b.toString();
   }
 
   String fmt(num v) {
-    final s = v.round().toString();
-    final b = StringBuffer();
-    for (var i = 0; i < s.length; i++) {
-      if (i > 0 && (s.length - i) % 3 == 0) b.write(thousands);
-      b.write(s[i]);
-    }
-    if (labelOverride.isNotEmpty) return '$b $labelOverride';
-    return '$prefix$b$suffix'.trim();
+    final n = num_(v);
+    if (labelOverride.isNotEmpty) return '$n $labelOverride';
+    return '$prefix$n$suffix'.trim();
   }
 
   factory Price.fromJson(Map<String, dynamic> p) {
@@ -73,7 +74,9 @@ class Price {
       symbol: sym,
       prefix: hasAffix ? _clean(prefix) : '',
       suffix: hasAffix ? _clean(suffix) : ' $sym',
-      thousands: (p['currency_thousand_separator'] ?? '.').toString(),
+      thousands: (p['currency_thousand_separator'] ?? ',').toString(),
+      decimal: (p['currency_decimal_separator'] ?? '.').toString(),
+      decimals: mu,
     );
   }
 }
