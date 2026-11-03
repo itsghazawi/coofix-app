@@ -65,3 +65,34 @@ add_filter('plugin_action_links_' . plugin_basename(__FILE__), function ($links)
     array_unshift($links, '<a href="' . esc_url(admin_url('admin.php?page=coofix-app')) . '">الإعدادات</a>');
     return $links;
 });
+
+/** One-time upgrades of saved settings (old default texts → new). */
+add_action('init', function () {
+    $db = get_option('coofix_app_db_version', '1.0.0');
+    if (version_compare($db, '1.2.0', '>=')) {
+        return;
+    }
+    $c = get_option(COOFIX_APP_OPTION, null);
+    if (is_array($c)) {
+        $d = coofix_app_defaults();
+        $old_titles = array('طلب صيانة', 'استعلام عن الصيانة');
+        if (isset($c['pages']['maintenance_title']) && in_array($c['pages']['maintenance_title'], $old_titles, true)) {
+            $c['pages']['maintenance_title'] = $d['pages']['maintenance_title'];
+        }
+        $old_intros = array('عبّئ البيانات وسيتواصل معك فريق الصيانة المعتمد لتحديد موعد الاستلام.', 'أدخل الكود المرجعي الموجود على إيصال الاستلام لمعرفة حالة عدّتك.');
+        if (isset($c['pages']['maintenance_intro']) && in_array($c['pages']['maintenance_intro'], $old_intros, true)) {
+            $c['pages']['maintenance_intro'] = $d['pages']['maintenance_intro'];
+        }
+        if (!empty($c['home']['sections'])) {
+            foreach ($c['home']['sections'] as &$s) {
+                if (isset($s['key'], $s['subtitle']) && $s['key'] === 'maintenance' && in_array($s['subtitle'], array('اطلب صيانة لعدّتك خلال دقيقة واحدة', 'استعلم عن حالة عدّتك بالكود المرجعي'), true)) {
+                    $s['subtitle'] = 'تابع حالة عدّتك برقم الطلب أو الهاتف';
+                }
+            }
+            unset($s);
+        }
+        $c['meta']['updated'] = time();
+        update_option(COOFIX_APP_OPTION, $c, false);
+    }
+    update_option('coofix_app_db_version', '1.2.0', false);
+});

@@ -149,7 +149,7 @@ function coofix_app_defaults() {
                 array('key' => 'values',       'enabled' => true, 'title' => '',                 'subtitle' => ''),
                 array('key' => 'latest',       'enabled' => false,'title' => 'وصل حديثاً',       'subtitle' => 'أحدث المنتجات في المتجر'),
                 array('key' => 'featured',     'enabled' => true, 'title' => 'الأكثر طلباً',     'subtitle' => 'اختيارات المحترفين في الورش'),
-                array('key' => 'maintenance',  'enabled' => true, 'title' => 'مركز الصيانة المعتمد', 'subtitle' => 'تابع حالة عدّتك برقم هاتفك'),
+                array('key' => 'maintenance',  'enabled' => true, 'title' => 'مركز الصيانة المعتمد', 'subtitle' => 'تابع حالة عدّتك برقم الطلب أو الهاتف'),
             ),
         ),
 
@@ -240,7 +240,7 @@ function coofix_app_defaults() {
                 array('title' => 'كيف تستفيد',  'body' => 'احتفظ بفاتورة الشراء وتواصل مع مركز الصيانة عبر التطبيق.'),
             ),
             'maintenance_title' => 'تتبّع الصيانة',
-            'maintenance_intro' => 'أدخل رقم هاتفك المسجّل عند تسليم العدّة لمتابعة حالة الصيانة.',
+            'maintenance_intro' => 'أدخل رقم طلب الصيانة (CFX-…) أو رقم هاتفك المسجّل عند تسليم العدّة.',
             'trader_message'    => 'مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة لدى كوفيكس سوريا.',
             'search_suggestions'=> array('مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'),
             'stats_products_label' => 'منتج',

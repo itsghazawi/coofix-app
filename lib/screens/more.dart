@@ -28,7 +28,7 @@ class MoreScreen extends StatelessWidget {
     final site = cfg.s('contact.website', Config.site);
     final catalogue = cfg.s('contact.catalogue_url', Config.site);
     final services = <_Item>[
-      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), 'تابع حالة عدّتك برقم هاتفك', () => push(const MaintenanceScreen())),
+      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), 'تابع حالة عدّتك برقم الطلب أو الهاتف', () => push(const MaintenanceScreen())),
       if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
       if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
       if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
@@ -287,13 +287,17 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     });
   }
 
+  /// Input is either a repair code (CFX-0012, or just 12) or the customer's phone.
   Future<void> _lookup() async {
-    final c = code.text.trim();
-    final digits = c.replaceAll(RegExp(r'[^0-9٠-٩]'), '');
-    if (digits.length < 7) {
-      setState(() => error = 'أدخل رقم الهاتف المسجّل عند تسليم العدّة');
+    var c = code.text.trim().replaceAllMapped(RegExp('[٠-٩]'), (m) => '${m[0]!.codeUnitAt(0) - 0x0660}');
+    final digits = c.replaceAll(RegExp(r'\D'), '');
+    final hasLetters = RegExp(r'[A-Za-z]').hasMatch(c);
+    final isCode = hasLetters || (digits.isNotEmpty && digits.length <= 5);
+    if (c.isEmpty || (!isCode && digits.length < 7)) {
+      setState(() => error = 'أدخل رقم طلب الصيانة أو رقم الهاتف المسجّل');
       return;
     }
+    if (isCode && !hasLetters) c = 'CFX-${digits.padLeft(4, '0')}';
     FocusScope.of(context).unfocus();
     setState(() {
       loading = true;
@@ -301,19 +305,25 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       results = null;
     });
     try {
-      final r = await http
-          .get(Uri.parse('${Config.site}/wp-json/coofix-app/v1/repairs?phone=${Uri.encodeQueryComponent(c)}'))
-          .timeout(const Duration(seconds: 12));
+      final uri = isCode
+          ? Uri.parse('${Config.site}/wp-json/coofix-app/v1/repair?code=${Uri.encodeQueryComponent(c.toUpperCase())}')
+          : Uri.parse('${Config.site}/wp-json/coofix-app/v1/repairs?phone=${Uri.encodeQueryComponent(c)}');
+      final r = await http.get(uri).timeout(const Duration(seconds: 12));
       if (r.statusCode == 429) {
         setState(() => error = 'محاولات كثيرة، حاول بعد قليل.');
-      } else if (r.statusCode == 200) {
+      } else if (r.statusCode == 200 || r.statusCode == 404) {
         final j = jsonDecode(utf8.decode(r.bodyBytes));
-        final items = ((j is Map ? j['items'] : null) as List? ?? []).whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+        List<Map<String, dynamic>> items = [];
+        if (j is Map && j['items'] is List) {
+          items = (j['items'] as List).whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+        } else if (j is Map && j['found'] == true) {
+          items = [j.cast<String, dynamic>()];
+        }
         if (items.isEmpty) {
-          setState(() => error = 'لا توجد طلبات صيانة مسجّلة على هذا الرقم.');
+          setState(() => error = isCode ? 'لا يوجد طلب صيانة بهذا الرقم.' : 'لا توجد طلبات صيانة مسجّلة على هذا الهاتف.');
         } else {
           setState(() => results = items);
-          (await SharedPreferences.getInstance()).setString('repair_phone', c);
+          if (!isCode) (await SharedPreferences.getInstance()).setString('repair_phone', code.text.trim());
         }
       } else {
         setState(() => error = 'خدمة تتبّع الصيانة غير متاحة حالياً.');
@@ -327,22 +337,25 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   @override
   Widget build(BuildContext context) {
     return _Page(title: Cfg.i.s('pages.maintenance_title', 'تتبّع الصيانة'), icon: Icons.build_circle_rounded, children: [
-      Text(Cfg.i.s('pages.maintenance_intro', 'أدخل رقم هاتفك المسجّل عند تسليم العدّة لمتابعة حالة الصيانة.'), style: T.b(14, c: C.muted, height: 1.7)),
+      Text(Cfg.i.s('pages.maintenance_intro', 'أدخل رقم طلب الصيانة (CFX-…) أو رقم هاتفك المسجّل عند تسليم العدّة.'), style: T.b(14, c: C.muted, height: 1.7)),
       const SizedBox(height: 18),
       TextField(
         controller: code,
         textAlign: TextAlign.center,
-        keyboardType: TextInputType.phone,
+        keyboardType: TextInputType.visiblePassword,
+        textCapitalization: TextCapitalization.characters,
+        autocorrect: false,
+        enableSuggestions: false,
         textDirection: TextDirection.ltr,
         textInputAction: TextInputAction.search,
         onSubmitted: (_) => _lookup(),
         style: T.h(20).copyWith(letterSpacing: 1.5),
         decoration: InputDecoration(
-          hintText: '09xx xxx xxx',
+          hintText: 'CFX-0012  أو  09xx xxx xxx',
           hintStyle: T.b(15, c: C.muted),
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: Icon(Icons.phone_iphone_rounded, color: C.muted),
+          prefixIcon: Icon(Icons.manage_search_rounded, color: C.muted),
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
