@@ -23,11 +23,15 @@ class _ShellState extends State<Shell> {
   int tab = 0;
 
   static const keys = ['home', 'categories', 'cart', 'favorites', 'more'];
+  bool navVisible = true;
 
   void go(int i) {
     if (i == tab) return;
     HapticFeedback.lightImpact();
-    setState(() => tab = i);
+    setState(() {
+      tab = i;
+      navVisible = true;
+    });
   }
 
   void goKey(String key) {
@@ -59,8 +63,31 @@ class _ShellState extends State<Shell> {
       },
       child: Scaffold(
         extendBody: true,
-        body: IndexedStack(index: tab, children: pages),
-        bottomNavigationBar: _NavBar(index: tab, onTap: go),
+        body: NotificationListener<ScrollUpdateNotification>(
+          onNotification: (n) {
+            if (n.metrics.axis != Axis.vertical) return false;
+            final d = n.scrollDelta ?? 0;
+            if (n.metrics.pixels < 60) {
+              if (!navVisible) setState(() => navVisible = true);
+            } else if (d > 4 && navVisible) {
+              setState(() => navVisible = false);
+            } else if (d < -4 && !navVisible) {
+              setState(() => navVisible = true);
+            }
+            return false;
+          },
+          child: IndexedStack(index: tab, children: pages),
+        ),
+        bottomNavigationBar: AnimatedSlide(
+          offset: navVisible ? Offset.zero : const Offset(0, 1.6),
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: navVisible ? 1 : 0,
+            duration: const Duration(milliseconds: 250),
+            child: _NavBar(index: tab, onTap: go),
+          ),
+        ),
       ),
     );
   }

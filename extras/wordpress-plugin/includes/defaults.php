@@ -260,6 +260,12 @@ function coofix_app_defaults() {
             ),
         ),
 
+        'site' => array(
+            'enabled'    => true,
+            'app_home'   => true,
+            'bottom_nav' => true,
+        ),
+
         'nav' => array(
             'home'       => 'الرئيسية',
             'categories' => 'الأقسام',

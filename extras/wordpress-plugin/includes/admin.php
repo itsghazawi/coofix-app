@@ -263,6 +263,7 @@ function coofix_app_admin_page() {
         'contact'    => array('التواصل والروابط', 'phone'),
         'pages'      => array('الصفحات والنصوص', 'media-text'),
         'nav'        => array('التنقل', 'menu'),
+        'site'       => array('تصميم الموقع', 'desktop'),
         'status'     => array('الصيانة والتحديثات', 'update'),
         'tools'      => array('أدوات', 'admin-tools'),
     );
@@ -618,6 +619,17 @@ function coofix_app_admin_page() {
                     coofix_app_field($cfg, 'nav.favorites', 'المفضلة');
                     coofix_app_field($cfg, 'nav.more', 'المزيد');
                     coofix_app_field($cfg, 'nav.show_favorites', 'إظهار تبويب المفضلة', 'toggle');
+                    coofix_app_card_close();
+                    ?>
+                </section>
+
+                <!-- الموقع -->
+                <section class="cfx-panel" data-panel="site">
+                    <?php
+                    coofix_app_card_open('تصميم الموقع بشكل التطبيق', 'يطبّق شكل التطبيق على موقع coofix.sy (الهيدر، البطاقات، الأزرار، صفحات المتجر). أوقفه للرجوع للتصميم القديم فوراً.', 'desktop');
+                    coofix_app_field($cfg, 'site.enabled', 'تفعيل تصميم التطبيق على الموقع', 'toggle');
+                    coofix_app_field($cfg, 'site.app_home', 'استخدام الصفحة الرئيسية الجديدة (مثل التطبيق)', 'toggle', array('help' => 'الرئيسية الجديدة تُبنى من نفس إعدادات هذه اللوحة. عند الإيقاف تعود الرئيسية القديمة.'));
+                    coofix_app_field($cfg, 'site.bottom_nav', 'الشريط السفلي على الموبايل', 'toggle');
                     coofix_app_card_close();
                     ?>
                 </section>
