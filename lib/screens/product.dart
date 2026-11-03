@@ -148,7 +148,7 @@ class _ProductScreenState extends State<ProductScreen> {
               const SliverToBoxAdapter(child: SectionHeader('منتجات مشابهة')),
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 300,
+                  height: 312,
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     scrollDirection: Axis.horizontal,
@@ -288,12 +288,19 @@ class _Qty extends StatelessWidget {
       decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(18)),
       child: Row(children: [
         b(Icons.add_rounded, () => onChange(qty + 1)),
-        SizedBox(
-          width: 34,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
-            child: Text('$qty', key: ValueKey(qty), textAlign: TextAlign.center, style: T.h(17)),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () async {
+            final n = await askQuantity(context, qty);
+            if (n != null) onChange(n);
+          },
+          child: SizedBox(
+            width: qty > 99 ? 52 : 40,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+              child: Text('$qty', key: ValueKey(qty), textAlign: TextAlign.center, style: T.h(17).copyWith(decoration: TextDecoration.underline, decorationColor: C.line, decorationStyle: TextDecorationStyle.dotted)),
+            ),
           ),
         ),
         b(Icons.remove_rounded, () => onChange(qty > 1 ? qty - 1 : 1)),

@@ -215,7 +215,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 14,
                   crossAxisSpacing: 14,
-                  mainAxisExtent: 292,
+                  mainAxisExtent: 304,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (c, i) => Reveal(key: ValueKey('${sort.name}-${list[i].id}'), index: i, child: ProductCard(list[i], heroTag: 'cat')),

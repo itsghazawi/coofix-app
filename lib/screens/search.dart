@@ -115,7 +115,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 14,
                         crossAxisSpacing: 14,
-                        mainAxisExtent: 292,
+                        mainAxisExtent: 304,
                       ),
                       itemCount: res.length,
                       itemBuilder: (c, i) => ProductCard(res[i], heroTag: 'search'),

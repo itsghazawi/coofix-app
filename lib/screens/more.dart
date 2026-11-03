@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../data/api.dart';
 import '../data/config.dart';
@@ -24,7 +27,7 @@ class MoreScreen extends StatelessWidget {
     final site = cfg.s('contact.website', Config.site);
     final catalogue = cfg.s('contact.catalogue_url', Config.site);
     final services = <_Item>[
-      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'طلب صيانة'), 'مركز صيانة معتمد', () => push(const MaintenanceScreen())),
+      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'استعلام عن الصيانة'), 'تتبّع حالة عدّتك بالكود المرجعي', () => push(const MaintenanceScreen())),
       if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
       if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
       if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
@@ -254,56 +257,195 @@ class MaintenanceScreen extends StatefulWidget {
   State<MaintenanceScreen> createState() => _MaintenanceScreenState();
 }
 
+/// Repair status lookup by reference code.
+/// Reads GET {site}/wp-json/coofix-app/v1/repair?code=XXXX
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
-  final name = TextEditingController();
-  final phone = TextEditingController();
-  final tool = TextEditingController();
-  final issue = TextEditingController();
-  bool warranty = true;
+  final code = TextEditingController();
+  bool loading = false;
+  Map<String, dynamic>? result;
+  String? error;
+
+  static const steps = [
+    ('received', 'تم الاستلام', Icons.inventory_2_rounded),
+    ('diagnosing', 'قيد الفحص', Icons.search_rounded),
+    ('waiting_parts', 'بانتظار القطع', Icons.hourglass_top_rounded),
+    ('repairing', 'قيد الإصلاح', Icons.build_rounded),
+    ('ready', 'جاهزة للاستلام', Icons.check_circle_rounded),
+    ('delivered', 'تم التسليم', Icons.handshake_rounded),
+  ];
+
+  Future<void> _lookup() async {
+    final c = code.text.trim();
+    if (c.isEmpty) {
+      setState(() => error = 'أدخل الكود المرجعي');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      loading = true;
+      error = null;
+      result = null;
+    });
+    try {
+      final r = await http
+          .get(Uri.parse('${Config.site}/wp-json/coofix-app/v1/repair?code=${Uri.encodeQueryComponent(c)}'))
+          .timeout(const Duration(seconds: 12));
+      final j = r.statusCode == 200 ? jsonDecode(utf8.decode(r.bodyBytes)) : null;
+      if (j is Map && j['found'] == true) {
+        setState(() => result = j.cast<String, dynamic>());
+      } else {
+        setState(() => error = 'لم يتم العثور على طلب صيانة بهذا الكود. تأكد من الكود أو تواصل معنا.');
+      }
+    } catch (_) {
+      setState(() => error = 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.');
+    }
+    if (mounted) setState(() => loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return _Page(title: Cfg.i.s('pages.maintenance_title', 'طلب صيانة'), icon: Icons.build_circle_rounded, children: [
-      Text(Cfg.i.s('pages.maintenance_intro', 'عبّئ البيانات وسيتواصل معك فريق الصيانة المعتمد لتحديد موعد الاستلام.'), style: T.b(14, c: C.muted, height: 1.7)),
-      const SizedBox(height: 20),
-      Field(ctrl: name, label: 'الاسم', icon: Icons.person_rounded),
-      const SizedBox(height: 12),
-      Field(ctrl: phone, label: 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
-      const SizedBox(height: 12),
-      Field(ctrl: tool, label: 'نوع العدة وموديلها', icon: Icons.handyman_rounded),
-      const SizedBox(height: 12),
-      Field(ctrl: issue, label: 'وصف المشكلة', icon: Icons.report_problem_rounded, lines: 3),
-      const SizedBox(height: 14),
-      Pressable(
-        scale: 0.98,
-        onTap: () => setState(() => warranty = !warranty),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: warranty ? C.accent : C.line)),
-          child: Row(children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(color: warranty ? C.accent : Colors.transparent, borderRadius: BorderRadius.circular(8), border: Border.all(color: warranty ? C.accent : C.muted)),
-              child: warranty ? const Icon(Icons.check_rounded, size: 16, color: Colors.white) : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(child: Text('العدة ضمن فترة الكفالة', style: T.b(14.5, w: FontWeight.w600))),
-          ]),
+    return _Page(title: Cfg.i.s('pages.maintenance_title', 'استعلام عن الصيانة'), icon: Icons.build_circle_rounded, children: [
+      Text(Cfg.i.s('pages.maintenance_intro', 'أدخل الكود المرجعي الموجود على إيصال الاستلام لمعرفة حالة عدّتك.'), style: T.b(14, c: C.muted, height: 1.7)),
+      const SizedBox(height: 18),
+      TextField(
+        controller: code,
+        textAlign: TextAlign.center,
+        textCapitalization: TextCapitalization.characters,
+        textInputAction: TextInputAction.search,
+        onSubmitted: (_) => _lookup(),
+        style: T.h(20).copyWith(letterSpacing: 2),
+        decoration: InputDecoration(
+          hintText: 'مثال: CFX-1024',
+          hintStyle: T.b(15, c: C.muted),
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Icon(Icons.qr_code_2_rounded, color: C.muted),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: C.accent, width: 1.5)),
         ),
       ),
+      const SizedBox(height: 14),
+      Pressable(
+        scale: 0.97,
+        onTap: loading ? null : _lookup,
+        child: Container(
+          height: 56,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(gradient: C.accentGrad, borderRadius: BorderRadius.circular(18)),
+          child: loading
+              ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: C.ink))
+              : Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.search_rounded, color: C.on(C.accent)),
+                  const SizedBox(width: 8),
+                  Text('استعلام', style: T.h(16, c: C.on(C.accent))),
+                ]),
+        ),
+      ),
+      if (error != null) ...[
+        const SizedBox(height: 18),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: const Color(0xFFFFF3F0), borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFF5C9BF))),
+          child: Row(children: [
+            const Icon(Icons.info_outline_rounded, color: Color(0xFFD0573B)),
+            const SizedBox(width: 10),
+            Expanded(child: Text(error!, style: T.b(13.5, c: const Color(0xFF9A3B26), w: FontWeight.w600, height: 1.6))),
+          ]),
+        ),
+      ],
+      if (result != null) ...[
+        const SizedBox(height: 20),
+        Reveal(child: _result(result!)),
+      ],
       const SizedBox(height: 22),
       WhatsAppButton(
-        label: 'أرسل طلب الصيانة',
-        onTap: () => openWhatsApp('طلب صيانة 🔧\n'
-            'الاسم: ${name.text}\n'
-            'الهاتف: ${phone.text}\n'
-            'العدة: ${tool.text}\n'
-            'المشكلة: ${issue.text}\n'
-            'ضمن الكفالة: ${warranty ? 'نعم' : 'لا'}', number: Config.whatsappMaintenance),
+        label: 'تواصل مع مركز الصيانة',
+        onTap: () => openWhatsApp(
+            code.text.trim().isEmpty ? 'مرحباً، لدي استفسار عن الصيانة.' : 'مرحباً، أستفسر عن طلب الصيانة رقم ${code.text.trim()}',
+            number: Config.whatsappMaintenance),
       ),
     ]);
+  }
+
+  Widget _result(Map<String, dynamic> r) {
+    final status = '${r['status'] ?? ''}';
+    final label = '${r['status_label'] ?? ''}'.isNotEmpty
+        ? '${r['status_label']}'
+        : steps.where((s) => s.$1 == status).map((s) => s.$2).firstOrNull ?? status;
+    final cancelled = status == 'cancelled';
+    final idx = steps.indexWhere((s) => s.$1 == status);
+    final rows = <(String, String)>[
+      if ('${r['device'] ?? ''}'.isNotEmpty) ('العدة', '${r['device']}'),
+      if ('${r['customer'] ?? ''}'.isNotEmpty) ('الاسم', '${r['customer']}'),
+      if ('${r['received_at'] ?? ''}'.isNotEmpty) ('تاريخ الاستلام', '${r['received_at']}'),
+      if ('${r['expected_at'] ?? ''}'.isNotEmpty) ('الموعد المتوقع', '${r['expected_at']}'),
+      if ('${r['cost'] ?? ''}'.isNotEmpty) ('التكلفة', '${r['cost']}'),
+      if (r['warranty'] != null) ('ضمن الكفالة', r['warranty'] == true ? 'نعم' : 'لا'),
+    ];
+    return Container(
+      decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(24), border: Border.all(color: C.line)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(gradient: C.inkGrad, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('طلب رقم', style: T.b(12, c: Colors.white.withValues(alpha: 0.55))),
+                Text('${r['code'] ?? code.text}', textDirection: TextDirection.ltr, style: T.h(18, c: Colors.white)),
+              ]),
+            ),
+            Badge2(label, bg: cancelled ? const Color(0xFFD64545) : C.accent),
+          ]),
+        ),
+        if (!cancelled && idx >= 0)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 6),
+            child: Column(children: [
+              for (var i = 0; i < steps.length; i++)
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Column(children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: i <= idx ? C.accent : C.bg, border: Border.all(color: i <= idx ? C.accent : C.line)),
+                      child: Icon(steps[i].$3, size: 16, color: i <= idx ? C.on(C.accent) : C.muted),
+                    ),
+                    if (i < steps.length - 1) Container(width: 2, height: 18, color: i < idx ? C.accent : C.line),
+                  ]),
+                  const SizedBox(width: 12),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Text(steps[i].$2, style: T.b(14, w: i == idx ? FontWeight.w700 : FontWeight.w500, c: i <= idx ? C.text : C.muted)),
+                  ),
+                ]),
+            ]),
+          ),
+        if (rows.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+            child: Column(children: [
+              for (final row in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(children: [
+                    Expanded(child: Text(row.$1, style: T.b(13.5, c: C.muted))),
+                    Flexible(child: Text(row.$2, textAlign: TextAlign.end, style: T.b(14, w: FontWeight.w700))),
+                  ]),
+                ),
+            ]),
+          ),
+        if ('${r['notes'] ?? ''}'.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(16)),
+            child: Text('${r['notes']}', style: T.b(13.5, height: 1.7)),
+          ),
+      ]),
+    );
   }
 }
 

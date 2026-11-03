@@ -85,6 +85,7 @@ class CartScreen extends StatelessWidget {
                                   qty: e.value,
                                   onPlus: () => Store.i.setQty(e.key, e.value + 1),
                                   onMinus: () => Store.i.setQty(e.key, e.value - 1),
+                                  onSet: (n) => Store.i.setQty(e.key, n),
                                 ),
                               ]),
                             ),
@@ -94,7 +95,7 @@ class CartScreen extends StatelessWidget {
                     },
                   ),
           ),
-          if (items.isNotEmpty) const _Checkout(),
+          if (items.isNotEmpty) _Checkout(key: ValueKey('${Store.i.count}-${Store.i.total}')),
         ]);
       },
     );
@@ -104,7 +105,8 @@ class CartScreen extends StatelessWidget {
 class _Stepper extends StatelessWidget {
   final int qty;
   final VoidCallback onPlus, onMinus;
-  const _Stepper({required this.qty, required this.onPlus, required this.onMinus});
+  final ValueChanged<int> onSet;
+  const _Stepper({required this.qty, required this.onPlus, required this.onMinus, required this.onSet});
   @override
   Widget build(BuildContext context) {
     Widget b(IconData i, VoidCallback f, {bool dark = false}) => Pressable(
@@ -119,14 +121,24 @@ class _Stepper extends StatelessWidget {
         );
     return Column(children: [
       b(Icons.add_rounded, onPlus, dark: true),
-      Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('$qty', style: T.h(15))),
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () async {
+          final n = await askQuantity(context, qty);
+          if (n != null) onSet(n);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+          child: Text('$qty', style: T.h(15).copyWith(decoration: TextDecoration.underline, decorationColor: C.line, decorationStyle: TextDecorationStyle.dotted)),
+        ),
+      ),
       b(qty == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded, onMinus),
     ]);
   }
 }
 
 class _Checkout extends StatefulWidget {
-  const _Checkout();
+  const _Checkout({super.key});
   @override
   State<_Checkout> createState() => _CheckoutState();
 }
@@ -218,7 +230,11 @@ class _CheckoutState extends State<_Checkout> {
           Row(children: [
             Text(cfg.s('order.total_label', 'الإجمالي التقريبي'), style: T.b(13.5, c: Colors.white.withValues(alpha: 0.6))),
             const Spacer(),
-            Text(items.first.key.price.fmt(Store.i.total), textDirection: TextDirection.rtl, style: T.h(20, c: Colors.white)),
+            Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+              Text(items.first.key.price.num_(Store.i.total), textDirection: TextDirection.ltr, style: T.h(20, c: Colors.white)),
+              const SizedBox(width: 5),
+              Text(items.first.key.price.unit, style: T.b(13, c: Colors.white.withValues(alpha: 0.7), w: FontWeight.w600)),
+            ]),
           ]),
           const SizedBox(height: 14),
         ],

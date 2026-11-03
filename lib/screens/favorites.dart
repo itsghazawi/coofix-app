@@ -47,7 +47,7 @@ class FavoritesScreen extends StatelessWidget {
                     crossAxisCount: 2,
                     mainAxisSpacing: 14,
                     crossAxisSpacing: 14,
-                    mainAxisExtent: 292,
+                    mainAxisExtent: 304,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (c, i) => Reveal(index: i, child: ProductCard(items[i], heroTag: 'fav')),

@@ -42,8 +42,7 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
+            Expanded(
               child: Stack(
                 children: [
                   Positioned.fill(child: Hero(tag: '$heroTag-${p.id}', child: ProductImage(p, radius: 18, iconSize: 40))),
@@ -54,7 +53,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(6, 10, 6, 4),
+              padding: const EdgeInsets.fromLTRB(6, 10, 6, 2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -64,13 +63,16 @@ class ProductCard extends StatelessWidget {
                     height: 42,
                     child: Text(p.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: T.b(14, w: FontWeight.w600, height: 1.45)),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 40,
+                    child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(child: PriceView(p.price, size: 14.5, compact: true)),
                       if (Cfg.i.b('products.allow_cart', true)) _AddButton(p),
                     ],
+                  ),
                   ),
                 ],
               ),

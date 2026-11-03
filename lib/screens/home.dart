@@ -41,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Widget grid(List<Product> items, String tag) => SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, mainAxisExtent: 292),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, mainAxisExtent: 304),
             delegate: SliverChildBuilderDelegate((c, i) => Reveal(index: i, child: ProductCard(items[i], heroTag: tag)), childCount: items.length),
           ),
         );
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'الأكثر طلباً'), subtitle: sub(sec))));
           slivers.add(grid(f, 'feat'));
         case 'maintenance':
-          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'اطلب صيانة لعدّتك خلال دقيقة واحدة')));
+          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'استعلم عن حالة عدّتك بالكود المرجعي')));
       }
     }
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
@@ -386,7 +386,7 @@ class _HorizontalProducts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 300,
+      height: 312,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,

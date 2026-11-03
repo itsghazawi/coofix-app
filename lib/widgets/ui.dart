@@ -296,3 +296,42 @@ void toast(BuildContext context, String msg, {IconData icon = Icons.check_circle
       content: Row(children: [Icon(icon, color: C.accent2, size: 20), const SizedBox(width: 10), Expanded(child: Text(msg))]),
     ));
 }
+
+/// Lets the user type a quantity. Returns null if cancelled.
+Future<int?> askQuantity(BuildContext context, int current) {
+  final c = TextEditingController(text: '$current');
+  c.selection = TextSelection(baseOffset: 0, extentOffset: c.text.length);
+  return showDialog<int>(
+    context: context,
+    builder: (ctx) {
+      void done() {
+        final n = int.tryParse(c.text.replaceAllMapped(RegExp('[٠-٩]'), (m) => '${m[0]!.codeUnitAt(0) - 0x0660}').trim());
+        Navigator.pop(ctx, n == null || n < 1 ? null : n.clamp(1, 9999));
+      }
+
+      return AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text('الكمية', style: T.h(18)),
+        content: TextField(
+          controller: c,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => done(),
+          style: T.h(26),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: C.bg,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: T.b(14, c: C.muted, w: FontWeight.w600))),
+          TextButton(onPressed: done, child: Text('تم', style: T.b(15, c: C.accentDeep, w: FontWeight.w700))),
+        ],
+      );
+    },
+  );
+}
