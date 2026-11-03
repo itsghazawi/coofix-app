@@ -584,7 +584,7 @@ add_action('wp', function () {
             echo '<span class="cfx-meta-sku"><small>رمز المنتج</small><b dir="ltr">' . esc_html($product->get_sku()) . '</b></span>';
         }
         echo '</div>';
-    }, 40);
+    }, 25);
 });
 
 // Product page extras: badges above the title + quick info under the cart button.

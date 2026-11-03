@@ -495,3 +495,19 @@ body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap,body.cfx-skin.single-
 body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap{padding:20px 22px!important;margin-top:18px!important}
 body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap .panel > *:first-child{margin-top:0!important}
 @media (max-width:999px){body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap table.shop_attributes th,body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap table.shop_attributes td{font-size:14.5px;padding:11px 12px}}
+
+/* Balanced summary column */
+body.cfx-skin .cfx-meta{margin:6px 0 16px}
+body.cfx-skin.single-product .summary .price{margin-bottom:6px!important}
+body.cfx-skin.single-product .summary .woocommerce-product-details__short-description{margin:0 0 6px}
+body.cfx-skin.single-product .summary hr,body.cfx-skin.single-product .summary .ct-product-divider{display:none!important}
+body.cfx-skin.single-product .summary > *{margin-block-end:0}
+@media (min-width:1000px){
+  body.cfx-skin.single-product .summary{display:flex;flex-direction:column;gap:14px}
+  body.cfx-skin.single-product .summary > *{margin-top:0!important;margin-bottom:0!important}
+  body.cfx-skin.single-product .summary .cfx-pbadges{margin:0}
+  body.cfx-skin .cfx-meta,body.cfx-skin .cfx-perks,body.cfx-skin .cfx-ask-wa,body.cfx-skin.single-product form.cart,body.cfx-skin .cfx-pinfo{max-width:460px;width:100%}
+  body.cfx-skin .cfx-meta-cat{flex:1}
+  body.cfx-skin .cfx-pinfo{margin:-4px 0 0!important}
+}
+body.cfx-skin.single-product .woocommerce-tabs.cfx-in-wrap .woocommerce-Tabs-panel{padding:0!important;margin:0!important;border:0!important}
