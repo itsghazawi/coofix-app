@@ -152,7 +152,9 @@ add_action('init', function () {
         ),
         'public'       => false,
         'show_ui'      => true,
-        'show_in_menu' => 'coofix-app',
+        'show_in_menu' => true,
+        'menu_position'=> 57,
+        'menu_icon'    => 'dashicons-hammer',
         'supports'     => false,
         'capability_type' => 'post',
         'map_meta_cap' => true,
@@ -458,7 +460,7 @@ add_filter('wp_insert_post_data', function ($data) {
 /* ------------------------------------------------------------------ */
 
 add_action('admin_menu', function () {
-    add_submenu_page('coofix-app', 'إعدادات الصيانة', 'إعدادات الصيانة', 'manage_options', 'coofix-repairs-settings', 'cfx_repair_settings_page');
+    add_submenu_page('edit.php?post_type=cfx_repair', 'إعدادات الصيانة', 'إعدادات الصيانة', 'manage_options', 'coofix-repairs-settings', 'cfx_repair_settings_page');
 }, 20);
 
 function cfx_repair_settings_page() {

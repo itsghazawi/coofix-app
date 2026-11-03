@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
 add_action('admin_menu', function () {
     $icon = 'data:image/svg+xml;base64,' . base64_encode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#a7aaad" d="M12 1.5 21.1 6.75v10.5L12 22.5l-9.1-5.25V6.75L12 1.5Zm0 4.2-5.4 3.1v6.4l5.4 3.1 5.4-3.1V8.8L12 5.7Z"/></svg>');
     add_menu_page('تطبيق كوفيكس', 'تطبيق كوفيكس', 'manage_options', 'coofix-app', 'coofix_app_admin_page', $icon, 56);
+    // Keep the control panel as the first (default) entry of this menu.
+    add_submenu_page('coofix-app', 'لوحة التطبيق', 'لوحة التطبيق', 'manage_options', 'coofix-app', 'coofix_app_admin_page');
 });
 
 add_action('admin_init', function () {
