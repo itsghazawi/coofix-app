@@ -610,3 +610,41 @@ add_action('woocommerce_after_add_to_cart_form', function () {
         . '<li>' . cfx_svg('build', 16) . 'صيانة معتمدة بعد البيع</li>'
         . '</ul>';
 });
+
+// Premium footer top (injected into the theme footer by site.js).
+add_action('wp_footer', function () {
+    if (!cfx_site_on()) {
+        return;
+    }
+    $c = coofix_app_get_config();
+    $icon = !empty($c['brand']['icon_url']) ? $c['brand']['icon_url'] : COOFIX_APP_URL . 'assets/icon.png';
+    $wa = preg_replace('/\D/', '', $c['contact']['whatsapp_support']);
+    $ph = preg_replace('/\D/', '', $c['contact']['phone']);
+    $pretty = function ($n) {
+        return strpos($n, '963') === 0 ? '0' . substr($n, 3, 3) . ' ' . substr($n, 6, 3) . ' ' . substr($n, 9) : $n;
+    };
+    $links = array(
+        array(home_url('/'), 'الرئيسية'),
+        array(wc_get_page_permalink('shop'), 'المنتجات'),
+        array(home_url('/repair/'), 'تتبع الصيانة'),
+        array(wc_get_cart_url(), 'السلة'),
+        array(wc_get_page_permalink('myaccount'), 'حسابي'),
+    );
+    echo '<template id="cfx-foot-tpl"><div class="cfx-foot">'
+        . '<div class="cfx-foot-brand"><img src="' . esc_url($icon) . '" alt="" width="52" height="52"><div><b>كوفيكس سوريا</b><span>عدّة بمواصفات احترافية — الوكيل المعتمد</span></div></div>'
+        . '<nav class="cfx-foot-col"><h4>روابط سريعة</h4>';
+    foreach ($links as $l) {
+        echo '<a href="' . esc_url($l[0]) . '">' . esc_html($l[1]) . '</a>';
+    }
+    echo '</nav><div class="cfx-foot-col"><h4>تواصل معنا</h4>';
+    if ($wa) {
+        echo '<a class="cfx-foot-wa" href="https://wa.me/' . esc_attr($wa) . '" target="_blank" rel="noopener">' . cfx_svg('chat', 18) . '<span dir="ltr">' . esc_html($pretty($wa)) . '</span></a>';
+    }
+    if ($ph) {
+        echo '<a href="tel:+' . esc_attr($ph) . '">' . cfx_svg('phone', 18) . '<span dir="ltr">' . esc_html($pretty($ph)) . '</span></a>';
+    }
+    if (!empty($c['contact']['address'])) {
+        echo '<span>' . esc_html($c['contact']['address']) . '</span>';
+    }
+    echo '</div></div></template>';
+}, 5);

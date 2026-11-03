@@ -89,10 +89,25 @@
     var c = document.createElement('small'); c.className = 'cfx-code'; c.dir = 'ltr'; c.textContent = m[1].trim();
     var n = document.createElement('span'); n.className = 'cfx-name'; n.textContent = m[2].trim();
     if (el.classList.contains('product_title')) {
-      var row = document.createElement('span'); row.className = 'cfx-code-row';
-      var l = document.createElement('span'); l.className = 'cfx-code-l'; l.textContent = 'كود المنتج';
-      row.appendChild(l); row.appendChild(c); el.appendChild(row);
+      var row = document.createElement('button'); row.type = 'button'; row.className = 'cfx-sku'; row.title = 'نسخ الكود';
+      row.innerHTML = '<span class="cfx-sku-ic"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>'
+        + '<span class="cfx-sku-l">كود المنتج</span><span class="cfx-sku-v" dir="ltr"></span><span class="cfx-sku-ok">تم النسخ ✓</span>';
+      row.querySelector('.cfx-sku-v').textContent = m[1].trim();
+      row.addEventListener('click', function () {
+        var v = m[1].trim();
+        try { navigator.clipboard.writeText(v); } catch (e) {}
+        row.classList.add('copied'); setTimeout(function () { row.classList.remove('copied'); }, 1600);
+      });
+      el.parentNode.insertBefore(row, el);
     } else { el.appendChild(c); }
     el.appendChild(n);
   });
+})();
+
+/* Premium footer */
+(function () {
+  var tpl = document.getElementById('cfx-foot-tpl'), f = document.querySelector('footer.ct-footer, #footer');
+  if (!tpl || !f || f.querySelector('.cfx-foot')) return;
+  f.insertBefore(tpl.content.cloneNode(true), f.firstChild);
+  f.classList.add('cfx-has-foot');
 })();
