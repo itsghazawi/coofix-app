@@ -8,6 +8,7 @@ import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
+import '../data/texts.dart';
 
 class ProductScreen extends StatefulWidget {
   final Product p;
@@ -95,7 +96,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         Row(children: [
                           Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: p.inStock ? const Color(0xFF2BB673) : C.muted)),
                           const SizedBox(width: 6),
-                          Text(p.inStock ? 'متوفر' : 'غير متوفر', style: T.b(12.5, w: FontWeight.w600, c: p.inStock ? const Color(0xFF2BB673) : C.muted)),
+                          Text(p.inStock ? tx('product.1', 'متوفر') : tx('product.2', 'غير متوفر'), style: T.b(12.5, w: FontWeight.w600, c: p.inStock ? const Color(0xFF2BB673) : C.muted)),
                         ]),
                       ]),
                       const SizedBox(height: 14),
@@ -110,13 +111,13 @@ class _ProductScreenState extends State<ProductScreen> {
                       const _Perks(),
                       if (specs.isNotEmpty) ...[
                         const SizedBox(height: 26),
-                        Text('المواصفات الفنية', style: T.h(17)),
+                        Text(tx('product.3', 'المواصفات الفنية'), style: T.h(17)),
                         const SizedBox(height: 12),
                         _Specs(specs),
                       ],
                       if (about.isNotEmpty) ...[
                         const SizedBox(height: 26),
-                        Text('عن المنتج', style: T.h(17)),
+                        Text(tx('product.4', 'عن المنتج'), style: T.h(17)),
                         const SizedBox(height: 10),
                         Text(about, style: T.b(14.5, c: const Color(0xFF4A4F57), height: 1.85)),
                       ],
@@ -145,7 +146,7 @@ class _ProductScreenState extends State<ProductScreen> {
               ),
             ),
             if (related.isNotEmpty && Cfg.i.b('products.show_related', true)) ...[
-              const SliverToBoxAdapter(child: SectionHeader('منتجات مشابهة')),
+              const SliverToBoxAdapter(child: SectionHeader(tx('product.5', 'منتجات مشابهة'))),
               SliverToBoxAdapter(
                 child: SizedBox(
                   height: 312,
@@ -221,7 +222,7 @@ class _ProductScreenState extends State<ProductScreen> {
                     child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(cart ? Icons.shopping_bag_rounded : Icons.chat_rounded, color: C.on(C.accent), size: 21),
                       const SizedBox(width: 10),
-                      Text(cart ? 'أضف إلى السلة' : Cfg.i.s('order.button', 'اطلب عبر واتساب'), style: T.h(15.5, c: C.on(C.accent))),
+                      Text(cart ? tx('product.6', 'أضف إلى السلة') : Cfg.i.s('order.button', 'اطلب عبر واتساب'), style: T.h(15.5, c: C.on(C.accent))),
                     ]),
                   ),
                 ),

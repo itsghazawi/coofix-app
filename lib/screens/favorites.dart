@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
 import 'cart.dart';
+import '../data/texts.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -24,9 +25,9 @@ class FavoritesScreen extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20, top + 20, 20, 16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('المفضلة', style: T.h(28)),
+                  Text(tx('favorites.1', 'المفضلة'), style: T.h(28)),
                   const SizedBox(height: 4),
-                  Text(items.isEmpty ? 'احفظ المنتجات التي تعجبك هنا' : '${items.length} منتج محفوظ', style: T.b(13.5, c: C.muted)),
+                  Text(items.isEmpty ? tx('favorites.2', 'احفظ المنتجات التي تعجبك هنا') : '${items.length} منتج محفوظ', style: T.b(13.5, c: C.muted)),
                 ]),
               ),
             ),
@@ -35,8 +36,8 @@ class FavoritesScreen extends StatelessWidget {
                 hasScrollBody: false,
                 child: EmptyState(
                   icon: Icons.favorite_border_rounded,
-                  title: 'لا توجد منتجات مفضلة',
-                  sub: 'اضغط على القلب في أي منتج لحفظه والرجوع إليه لاحقاً.',
+                  title: tx('favorites.3', 'لا توجد منتجات مفضلة'),
+                  sub: tx('favorites.4', 'اضغط على القلب في أي منتج لحفظه والرجوع إليه لاحقاً.'),
                 ),
               )
             else

@@ -6,6 +6,7 @@ import '../data/config.dart';
 import '../data/icons.dart';
 import '../data/models.dart';
 import '../theme.dart';
+import '../data/texts.dart';
 
 /// Scales down slightly on press — gives every tappable surface a tactile feel.
 class Pressable extends StatefulWidget {
@@ -312,7 +313,7 @@ Future<int?> askQuantity(BuildContext context, int current) {
       return AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('الكمية', style: T.h(18)),
+        title: Text(tx('ui.1', 'الكمية'), style: T.h(18)),
         content: TextField(
           controller: c,
           autofocus: true,
@@ -328,8 +329,8 @@ Future<int?> askQuantity(BuildContext context, int current) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: T.b(14, c: C.muted, w: FontWeight.w600))),
-          TextButton(onPressed: done, child: Text('تم', style: T.b(15, c: C.accentDeep, w: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tx('ui.2', 'إلغاء'), style: T.b(14, c: C.muted, w: FontWeight.w600))),
+          TextButton(onPressed: done, child: Text(tx('ui.3', 'تم'), style: T.b(15, c: C.accentDeep, w: FontWeight.w700))),
         ],
       );
     },

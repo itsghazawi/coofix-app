@@ -19,6 +19,7 @@ import 'categories.dart';
 import 'more.dart';
 import 'search.dart';
 import 'shell.dart';
+import '../data/texts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -60,27 +61,27 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_HeroCarouselState.slides.isNotEmpty) slivers.add(const SliverToBoxAdapter(child: _HeroCarousel()));
         case 'categories':
           if (api.categories.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'تسوّق حسب القسم'), subtitle: sub(sec), action: 'الكل', onAction: () => Shell.of(context)?.goKey('categories'))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tx('home.1', 'تسوّق حسب القسم')), subtitle: sub(sec), action: tx('home.2', 'الكل'), onAction: () => Shell.of(context)?.goKey('categories'))));
           slivers.add(SliverToBoxAdapter(child: _CategoryStrip(api.categories)));
         case 'deals':
           final deals = api.deals;
           if (deals.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'عروض حصرية'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tx('home.3', 'عروض حصرية')), subtitle: sub(sec))));
           slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(deals, tag: 'deal')));
         case 'values':
           slivers.add(const SliverToBoxAdapter(child: _Values()));
         case 'latest':
           final l = api.latest;
           if (l.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'وصل حديثاً'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tx('home.4', 'وصل حديثاً')), subtitle: sub(sec))));
           slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(l, tag: 'new')));
         case 'featured':
           final f = api.featured;
           if (f.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'الأكثر طلباً'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tx('home.5', 'الأكثر طلباً')), subtitle: sub(sec))));
           slivers.add(grid(f, 'feat'));
         case 'maintenance':
-          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'تابع حالة عدّتك برقم الطلب أو الهاتف')));
+          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, tx('home.6', 'مركز الصيانة المعتمد')), sub: sub(sec) ?? tx('home.7', 'تابع حالة عدّتك برقم الطلب أو الهاتف'))));
       }
     }
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));

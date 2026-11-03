@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../widgets/brand.dart';
 import '../widgets/ui.dart';
 import 'cart.dart';
+import '../data/texts.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -28,20 +29,20 @@ class MoreScreen extends StatelessWidget {
     final site = cfg.s('contact.website', Config.site);
     final catalogue = cfg.s('contact.catalogue_url', Config.site);
     final services = <_Item>[
-      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), 'تابع حالة عدّتك برقم الطلب أو الهاتف', () => push(const MaintenanceScreen())),
-      if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
-      if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
-      if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
+      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), tx('more.1', 'تابع حالة عدّتك برقم الطلب أو الهاتف'), () => push(const MaintenanceScreen())),
+      if (on('warranty')) _Item(Icons.shield_rounded, tx('more.2', 'الكفالة'), cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
+      if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, tx('more.3', 'تحميل الكتالوج'), 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
+      if (on('traders')) _Item(Icons.storefront_rounded, tx('more.4', 'للتجار'), tx('more.5', 'أسعار الجملة والشراكات'),
           () => openWhatsApp(cfg.s('pages.trader_message', 'مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة.'), number: Config.whatsappSupport)),
     ];
     final contact = <_Item>[
-      if (on('whatsapp')) _Item(Icons.chat_rounded, 'واتساب', Config.pretty(Config.whatsappSupport), () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport), color: C.green),
-      if (on('call')) _Item(Icons.call_rounded, 'اتصال مباشر', Config.pretty(Config.phone), () => openUrl('tel:+${Config.phone}')),
-      if (on('email') && email.isNotEmpty) _Item(Icons.alternate_email_rounded, 'البريد الإلكتروني', email, () => openUrl('mailto:$email')),
-      if (on('website') && site.isNotEmpty) _Item(Icons.language_rounded, 'الموقع الإلكتروني', site.replaceAll(RegExp(r'^https?://(www\.)?'), '').replaceAll(RegExp(r'/$'), ''), () => openUrl(site)),
+      if (on('whatsapp')) _Item(Icons.chat_rounded, tx('more.6', 'واتساب'), Config.pretty(Config.whatsappSupport), () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport), color: C.green),
+      if (on('call')) _Item(Icons.call_rounded, tx('more.7', 'اتصال مباشر'), Config.pretty(Config.phone), () => openUrl('tel:+${Config.phone}')),
+      if (on('email') && email.isNotEmpty) _Item(Icons.alternate_email_rounded, tx('more.8', 'البريد الإلكتروني'), email, () => openUrl('mailto:$email')),
+      if (on('website') && site.isNotEmpty) _Item(Icons.language_rounded, tx('more.9', 'الموقع الإلكتروني'), site.replaceAll(RegExp(r'^https?://(www\.)?'), '').replaceAll(RegExp(r'/$'), ''), () => openUrl(site)),
       if (on('location') && (address.isNotEmpty || maps.isNotEmpty))
-        _Item(Icons.location_on_rounded, 'العنوان', address.isNotEmpty ? address : 'عرض على الخريطة', () => maps.isNotEmpty ? openUrl(maps) : null),
-      if (hours.isNotEmpty) _Item(Icons.schedule_rounded, 'أوقات الدوام', hours, () {}),
+        _Item(Icons.location_on_rounded, tx('more.10', 'العنوان'), address.isNotEmpty ? address : tx('more.11', 'عرض على الخريطة'), () => maps.isNotEmpty ? openUrl(maps) : null),
+      if (hours.isNotEmpty) _Item(Icons.schedule_rounded, tx('more.12', 'أوقات الدوام'), hours, () {}),
     ];
     final socials = <(String, String)>[
       if (on('socials'))
@@ -71,23 +72,23 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 18),
               Row(children: [
                 _Stat('${Api.i.products.length}+', cfg.s('pages.stats_products_label', 'منتج')),
-                _Stat('${Api.i.categories.length}', 'أقسام'),
-                const _Stat('6', 'أشهر كفالة'),
+                _Stat('${Api.i.categories.length}', tx('more.13', 'أقسام')),
+                const _Stat('6', tx('more.14', 'أشهر كفالة')),
               ]),
             ]),
           ),
         ),
         const SizedBox(height: 22),
-        if (services.isNotEmpty) _Group(title: 'الخدمات', items: services),
+        if (services.isNotEmpty) _Group(title: tx('more.15', 'الخدمات'), items: services),
         if (services.isNotEmpty) const SizedBox(height: 18),
-        if (contact.isNotEmpty) _Group(title: 'تواصل معنا', items: contact),
+        if (contact.isNotEmpty) _Group(title: tx('more.16', 'تواصل معنا'), items: contact),
         if (socials.isNotEmpty) ...[
           const SizedBox(height: 18),
           _Socials(socials),
         ],
         if (on('about')) ...[
           const SizedBox(height: 18),
-          _Group(title: 'عن كوفيكس', items: [
+          _Group(title: tx('more.17', 'عن كوفيكس'), items: [
             _Item(Icons.info_rounded, cfg.s('pages.about_title', 'من نحن'), 'قصة ${Config.brand}', () => push(const AboutScreen())),
           ]),
         ],
@@ -102,16 +103,16 @@ class _Socials extends StatelessWidget {
   final List<(String, String)> items;
   const _Socials(this.items);
   static const _meta = {
-    'facebook': (Icons.facebook_rounded, 'فيسبوك', Color(0xFF1877F2)),
-    'instagram': (Icons.camera_alt_rounded, 'إنستغرام', Color(0xFFE1306C)),
-    'tiktok': (Icons.music_note_rounded, 'تيك توك', Color(0xFF111111)),
-    'telegram': (Icons.send_rounded, 'تلغرام', Color(0xFF229ED9)),
-    'youtube': (Icons.play_circle_fill_rounded, 'يوتيوب', Color(0xFFFF0000)),
+    'facebook': (Icons.facebook_rounded, tx('more.18', 'فيسبوك'), Color(0xFF1877F2)),
+    'instagram': (Icons.camera_alt_rounded, tx('more.19', 'إنستغرام'), Color(0xFFE1306C)),
+    'tiktok': (Icons.music_note_rounded, tx('more.20', 'تيك توك'), Color(0xFF111111)),
+    'telegram': (Icons.send_rounded, tx('more.21', 'تلغرام'), Color(0xFF229ED9)),
+    'youtube': (Icons.play_circle_fill_rounded, tx('more.22', 'يوتيوب'), Color(0xFFFF0000)),
   };
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 10), child: Text('تابعنا', style: T.b(13, w: FontWeight.w700, c: C.muted))),
+      Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 10), child: Text(tx('more.23', 'تابعنا'), style: T.b(13, w: FontWeight.w700, c: C.muted))),
       Row(children: [
         for (final it in items)
           Expanded(
@@ -267,12 +268,12 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   String? error;
 
   static const steps = [
-    ('received', 'تم الاستلام', Icons.inventory_2_rounded),
-    ('diagnosing', 'قيد الفحص', Icons.search_rounded),
-    ('waiting_parts', 'بانتظار القطع', Icons.hourglass_top_rounded),
-    ('repairing', 'قيد الإصلاح', Icons.build_rounded),
-    ('ready', 'جاهزة للاستلام', Icons.check_circle_rounded),
-    ('delivered', 'تم التسليم', Icons.handshake_rounded),
+    ('received', tx('more.24', 'تم الاستلام'), Icons.inventory_2_rounded),
+    ('diagnosing', tx('more.25', 'قيد الفحص'), Icons.search_rounded),
+    ('waiting_parts', tx('more.26', 'بانتظار القطع'), Icons.hourglass_top_rounded),
+    ('repairing', tx('more.27', 'قيد الإصلاح'), Icons.build_rounded),
+    ('ready', tx('more.28', 'جاهزة للاستلام'), Icons.check_circle_rounded),
+    ('delivered', tx('more.29', 'تم التسليم'), Icons.handshake_rounded),
   ];
 
   @override
@@ -294,7 +295,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final hasLetters = RegExp(r'[A-Za-z]').hasMatch(c);
     final isCode = hasLetters || (digits.isNotEmpty && digits.length <= 5);
     if (c.isEmpty || (!isCode && digits.length < 7)) {
-      setState(() => error = 'أدخل رقم طلب الصيانة أو رقم الهاتف المسجّل');
+      setState(() => error = tx('more.30', 'أدخل رقم طلب الصيانة أو رقم الهاتف المسجّل'));
       return;
     }
     if (isCode && !hasLetters) c = 'CFX-${digits.padLeft(4, '0')}';
@@ -310,7 +311,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           : Uri.parse('${Config.site}/wp-json/coofix-app/v1/repairs?phone=${Uri.encodeQueryComponent(c)}');
       final r = await http.get(uri).timeout(const Duration(seconds: 12));
       if (r.statusCode == 429) {
-        setState(() => error = 'محاولات كثيرة، حاول بعد قليل.');
+        setState(() => error = tx('more.31', 'محاولات كثيرة، حاول بعد قليل.'));
       } else if (r.statusCode == 200 || r.statusCode == 404) {
         final j = jsonDecode(utf8.decode(r.bodyBytes));
         List<Map<String, dynamic>> items = [];
@@ -320,16 +321,16 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           items = [j.cast<String, dynamic>()];
         }
         if (items.isEmpty) {
-          setState(() => error = isCode ? 'لا يوجد طلب صيانة بهذا الرقم.' : 'لا توجد طلبات صيانة مسجّلة على هذا الهاتف.');
+          setState(() => error = isCode ? tx('more.32', 'لا يوجد طلب صيانة بهذا الرقم.') : tx('more.33', 'لا توجد طلبات صيانة مسجّلة على هذا الهاتف.'));
         } else {
           setState(() => results = items);
           if (!isCode) (await SharedPreferences.getInstance()).setString('repair_phone', code.text.trim());
         }
       } else {
-        setState(() => error = 'خدمة تتبّع الصيانة غير متاحة حالياً.');
+        setState(() => error = tx('more.34', 'خدمة تتبّع الصيانة غير متاحة حالياً.'));
       }
     } catch (_) {
-      setState(() => error = 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.');
+      setState(() => error = tx('more.35', 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.'));
     }
     if (mounted) setState(() => loading = false);
   }
@@ -351,7 +352,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         onSubmitted: (_) => _lookup(),
         style: T.h(20).copyWith(letterSpacing: 1.5),
         decoration: InputDecoration(
-          hintText: 'CFX-0012  أو  09xx xxx xxx',
+          hintText: tx('more.36', 'CFX-0012  أو  09xx xxx xxx'),
           hintStyle: T.b(15, c: C.muted),
           filled: true,
           fillColor: Colors.white,
@@ -375,7 +376,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               : Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.search_rounded, color: C.on(C.accent)),
                   const SizedBox(width: 8),
-                  Text('عرض طلباتي', style: T.h(16, c: C.on(C.accent))),
+                  Text(tx('more.37', 'عرض طلباتي'), style: T.h(16, c: C.on(C.accent))),
                 ]),
         ),
       ),
@@ -398,8 +399,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
         ],
       const SizedBox(height: 22),
       WhatsAppButton(
-        label: 'تواصل مع مركز الصيانة',
-        onTap: () => openWhatsApp('مرحباً، لدي استفسار عن الصيانة.', number: Config.whatsappMaintenance),
+        label: tx('more.38', 'تواصل مع مركز الصيانة'),
+        onTap: () => openWhatsApp(tx('more.39', 'مرحباً، لدي استفسار عن الصيانة.'), number: Config.whatsappMaintenance),
       ),
     ]);
   }
@@ -412,13 +413,13 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final cancelled = status == 'cancelled';
     final idx = steps.indexWhere((s) => s.$1 == status);
     final rows = <(String, String)>[
-      if ('${r['device'] ?? ''}'.isNotEmpty) ('العدة', '${r['device']}'),
-      if ('${r['serial'] ?? ''}'.isNotEmpty) ('الرقم التسلسلي', '${r['serial']}'),
-      if ('${r['received_at'] ?? ''}'.isNotEmpty) ('تاريخ الاستلام', '${r['received_at']}'),
-      if ('${r['service_at'] ?? ''}'.isNotEmpty) ('موعد الصيانة', '${r['service_at']}'),
-      if ('${r['expected_at'] ?? ''}'.isNotEmpty) ('التسليم ابتداءً من', '${r['expected_at']}'),
-      if ('${r['cost'] ?? ''}'.isNotEmpty) ('التكلفة', '${r['cost']}'),
-      if (r['warranty'] != null) ('ضمن الكفالة', r['warranty'] == true ? 'نعم' : 'لا'),
+      if ('${r['device'] ?? ''}'.isNotEmpty) (tx('more.40', 'العدة'), '${r['device']}'),
+      if ('${r['serial'] ?? ''}'.isNotEmpty) (tx('more.41', 'الرقم التسلسلي'), '${r['serial']}'),
+      if ('${r['received_at'] ?? ''}'.isNotEmpty) (tx('more.42', 'تاريخ الاستلام'), '${r['received_at']}'),
+      if ('${r['service_at'] ?? ''}'.isNotEmpty) (tx('more.43', 'موعد الصيانة'), '${r['service_at']}'),
+      if ('${r['expected_at'] ?? ''}'.isNotEmpty) (tx('more.44', 'التسليم ابتداءً من'), '${r['expected_at']}'),
+      if ('${r['cost'] ?? ''}'.isNotEmpty) (tx('more.45', 'التكلفة'), '${r['cost']}'),
+      if (r['warranty'] != null) (tx('more.46', 'ضمن الكفالة'), r['warranty'] == true ? tx('more.47', 'نعم') : tx('more.48', 'لا')),
     ];
     return Container(
       decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(24), border: Border.all(color: C.line)),
@@ -429,7 +430,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           child: Row(children: [
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('طلب رقم', style: T.b(12, c: Colors.white.withValues(alpha: 0.55))),
+                Text(tx('more.49', 'طلب رقم'), style: T.b(12, c: Colors.white.withValues(alpha: 0.55))),
                 Text('${r['code'] ?? code.text}', textDirection: TextDirection.ltr, style: T.h(18, c: Colors.white)),
               ]),
             ),
@@ -479,7 +480,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(16)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('ما تم في الصيانة', style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
+              Text(tx('more.50', 'ما تم في الصيانة'), style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
               const SizedBox(height: 4),
               Text('${r['work_done']}', style: T.b(14, height: 1.7, w: FontWeight.w600)),
             ]),
@@ -488,7 +489,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('سجل التحديثات', style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
+              Text(tx('more.51', 'سجل التحديثات'), style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
               const SizedBox(height: 6),
               for (final t in (r['timeline'] as List).reversed)
                 if (t is Map && '${t['note'] ?? ''}'.isNotEmpty)

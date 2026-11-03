@@ -10,6 +10,7 @@ import '../theme.dart';
 import 'actions.dart';
 import 'brand.dart';
 import 'ui.dart';
+import '../data/texts.dart';
 
 /// Full-screen notice shown instead of the app while maintenance mode is on.
 class MaintenanceModeScreen extends StatelessWidget {
@@ -39,7 +40,7 @@ class MaintenanceModeScreen extends StatelessWidget {
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.chat_rounded, color: Colors.white),
                   const SizedBox(width: 10),
-                  Text('تواصل معنا', style: T.h(15, c: Colors.white)),
+                  Text(tx('notices.1', 'تواصل معنا'), style: T.h(15, c: Colors.white)),
                 ]),
               ),
             ),
@@ -86,7 +87,7 @@ Future<bool> maybeShowUpdate(BuildContext context) async {
             Text(cfg.s('general.update.message'), textAlign: TextAlign.center, style: T.b(14, c: C.muted, height: 1.7)),
             const SizedBox(height: 20),
             if (url.isNotEmpty)
-              _Btn(label: 'تحديث الآن', onTap: () => openUrl(url)),
+              _Btn(label: tx('notices.2', 'تحديث الآن'), onTap: () => openUrl(url)),
             if (!force) ...[
               const SizedBox(height: 8),
               TextButton(
@@ -94,7 +95,7 @@ Future<bool> maybeShowUpdate(BuildContext context) async {
                   p.setBool(skipKey, true);
                   Navigator.pop(c);
                 },
-                child: Text('لاحقاً', style: T.b(14, c: C.muted, w: FontWeight.w600)),
+                child: Text(tx('notices.3', 'لاحقاً'), style: T.b(14, c: C.muted, w: FontWeight.w600)),
               ),
             ],
           ]),

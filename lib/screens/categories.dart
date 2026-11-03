@@ -6,6 +6,7 @@ import '../data/models.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
+import '../data/texts.dart';
 
 void openCategory(BuildContext context, Category c) {
   Navigator.of(context).push(MaterialPageRoute(builder: (_) => CategoryProductsScreen(c)));
@@ -25,7 +26,7 @@ class CategoriesScreen extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.fromLTRB(20, top + 20, 20, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('الأقسام', style: T.h(28)),
+              Text(tx('categories.1', 'الأقسام'), style: T.h(28)),
               const SizedBox(height: 4),
               Text('${Api.i.products.length} منتج في ${cats.length} أقسام', style: T.b(13.5, c: C.muted)),
             ]),
@@ -147,7 +148,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final list = items;
-    const labels = {_Sort.def: 'المقترح', _Sort.low: 'الأقل سعراً', _Sort.high: 'الأعلى سعراً', _Sort.deal: 'العروض'};
+    const labels = {_Sort.def: tx('categories.2', 'المقترح'), _Sort.low: tx('categories.3', 'الأقل سعراً'), _Sort.high: tx('categories.4', 'الأعلى سعراً'), _Sort.deal: tx('categories.5', 'العروض')};
     return Scaffold(
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -205,7 +206,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           if (list.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(child: Text('لا توجد منتجات في هذا القسم حالياً', style: T.b(14, c: C.muted))),
+              child: Center(child: Text(tx('categories.6', 'لا توجد منتجات في هذا القسم حالياً'), style: T.b(14, c: C.muted))),
             )
           else
             SliverPadding(

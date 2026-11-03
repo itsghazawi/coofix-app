@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
 import 'shell.dart';
+import '../data/texts.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -23,9 +24,9 @@ class CartScreen extends StatelessWidget {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('سلة الطلب', style: T.h(28)),
+                  Text(tx('cart.1', 'سلة الطلب'), style: T.h(28)),
                   const SizedBox(height: 4),
-                  Text(items.isEmpty ? 'سلتك فارغة' : '${Store.i.count} قطعة جاهزة للطلب', style: T.b(13.5, c: C.muted)),
+                  Text(items.isEmpty ? tx('cart.2', 'سلتك فارغة') : '${Store.i.count} قطعة جاهزة للطلب', style: T.b(13.5, c: C.muted)),
                 ]),
               ),
               if (items.isNotEmpty)
@@ -33,7 +34,7 @@ class CartScreen extends StatelessWidget {
                   onTap: () => Store.i.clear(),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Text('إفراغ', style: T.b(14, w: FontWeight.w600, c: C.muted)),
+                    child: Text(tx('cart.3', 'إفراغ'), style: T.b(14, w: FontWeight.w600, c: C.muted)),
                   ),
                 ),
             ]),
@@ -42,8 +43,8 @@ class CartScreen extends StatelessWidget {
             child: items.isEmpty
                 ? const _Empty(
                     icon: Icons.shopping_bag_outlined,
-                    title: 'لم تضف أي منتج بعد',
-                    sub: 'تصفّح عدد كوفيكس وأضف ما تحتاجه، ثم أرسل طلبك عبر واتساب بضغطة واحدة.',
+                    title: tx('cart.4', 'لم تضف أي منتج بعد'),
+                    sub: tx('cart.5', 'تصفّح عدد كوفيكس وأضف ما تحتاجه، ثم أرسل طلبك عبر واتساب بضغطة واحدة.'),
                   )
                 : ListView.separated(
                     physics: const BouncingScrollPhysics(),
@@ -170,19 +171,19 @@ class _CheckoutState extends State<_Checkout> {
                 Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
                 const SizedBox(height: 18),
                 if (cfg.b('order.ask_name', true)) ...[
-                  Field(ctrl: name, label: cfg.b('order.require_name') ? 'الاسم الكامل *' : 'الاسم الكامل', icon: Icons.person_rounded),
+                  Field(ctrl: name, label: cfg.b('order.require_name') ? tx('cart.6', 'الاسم الكامل *') : tx('cart.7', 'الاسم الكامل'), icon: Icons.person_rounded),
                   const SizedBox(height: 12),
                 ],
                 if (cfg.b('order.ask_city', true)) ...[
-                  Field(ctrl: city, label: cfg.b('order.require_city') ? 'المدينة / المنطقة *' : 'المدينة / المنطقة', icon: Icons.location_on_rounded),
+                  Field(ctrl: city, label: cfg.b('order.require_city') ? tx('cart.8', 'المدينة / المنطقة *') : tx('cart.9', 'المدينة / المنطقة'), icon: Icons.location_on_rounded),
                   const SizedBox(height: 12),
                 ],
                 if (cfg.b('order.ask_phone')) ...[
-                  Field(ctrl: phone, label: cfg.b('order.require_phone') ? 'رقم الهاتف *' : 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
+                  Field(ctrl: phone, label: cfg.b('order.require_phone') ? tx('cart.10', 'رقم الهاتف *') : tx('cart.11', 'رقم الهاتف'), icon: Icons.phone_rounded, type: TextInputType.phone),
                   const SizedBox(height: 12),
                 ],
                 if (cfg.b('order.ask_note', true)) ...[
-                  Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
+                  Field(ctrl: note, label: tx('cart.12', 'ملاحظات (اختياري)'), icon: Icons.edit_note_rounded),
                   const SizedBox(height: 12),
                 ],
                 if (error != null) Padding(
@@ -191,12 +192,12 @@ class _CheckoutState extends State<_Checkout> {
                 ),
                 const SizedBox(height: 8),
                 WhatsAppButton(
-                  label: 'أرسل الطلب عبر واتساب',
+                  label: tx('cart.13', 'أرسل الطلب عبر واتساب'),
                   onTap: () {
                     String? miss;
-                    if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = 'الاسم';
-                    if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = 'المدينة';
-                    if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
+                    if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = tx('cart.14', 'الاسم');
+                    if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = tx('cart.15', 'المدينة');
+                    if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = tx('cart.11', 'رقم الهاتف');
                     if (miss != null) {
                       setSheet(() => error = 'الرجاء تعبئة $miss');
                       return;
@@ -330,7 +331,7 @@ class EmptyState extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
                 decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(16)),
-                child: Text('ابدأ التسوّق', style: T.b(14, w: FontWeight.w700, c: Colors.white)),
+                child: Text(tx('cart.16', 'ابدأ التسوّق'), style: T.b(14, w: FontWeight.w700, c: Colors.white)),
               ),
             ),
           ]),

@@ -5,6 +5,7 @@ import '../data/config.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
+import '../data/texts.dart';
 
 class SearchScreen extends StatefulWidget {
   final String initial;
@@ -19,7 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<String> get suggestions {
     final l = Cfg.i.strings('pages.search_suggestions');
-    return l.isEmpty ? const ['مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'] : l;
+    return l.isEmpty ? const ['مثقب', 'جلاخة', tx('search.1', 'شحن'), tx('search.2', 'كمبريسور'), tx('search.3', 'منشار'), tx('search.4', 'مولدة'), tx('search.5', 'طقم')] : l;
   }
 
   @override
@@ -58,7 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onChanged: (v) => setState(() => q = v),
                     style: T.b(15, w: FontWeight.w500),
                     decoration: InputDecoration(
-                      hintText: 'ابحث في منتجات كوفيكس',
+                      hintText: tx('search.6', 'ابحث في منتجات كوفيكس'),
                       hintStyle: T.b(14.5, c: C.muted),
                       prefixIcon: const Icon(Icons.search_rounded, color: C.muted),
                       suffixIcon: q.isEmpty
@@ -86,7 +87,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Expanded(
           child: q.trim().isEmpty
               ? ListView(padding: const EdgeInsets.all(20), children: [
-                  Text('عمليات بحث شائعة', style: T.h(16)),
+                  Text(tx('search.7', 'عمليات بحث شائعة'), style: T.h(16)),
                   const SizedBox(height: 14),
                   Wrap(spacing: 8, runSpacing: 10, children: [
                     for (final s in suggestions)
