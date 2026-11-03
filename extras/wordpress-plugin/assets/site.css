@@ -606,3 +606,4 @@ body.cfx-skin .cfx-catchip{display:inline-flex;align-items:center;gap:6px;height
   font-size:13px;font-weight:700;color:var(--cfx-text)!important;text-decoration:none!important;transition:.2s}
 body.cfx-skin .cfx-catchip svg{fill:var(--cfx-amber)}
 body.cfx-skin .cfx-catchip:hover{border-color:var(--cfx-amber);box-shadow:0 6px 16px rgba(250,162,27,.18)}
+.cfx-side .cfx-bnav-n{order:9;margin-inline-start:auto!important;margin-inline-end:0}.cfx-side .cfx-side-i > span{order:2}.cfx-side .cfx-side-i > svg{order:1}

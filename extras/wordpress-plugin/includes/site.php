@@ -421,7 +421,7 @@ add_action('wp_footer', function () {
         foreach ($items as $it) {
             $o .= '<a class="' . $cls . $it[3] . '" href="' . esc_url($it[0]) . '">' . cfx_svg($it[1], 22);
             if (!empty($it[4])) {
-                $o .= '<b class="cfx-bnav-n"' . ($count ? '' : ' hidden') . '>' . intval($count) . '</b>';
+                $o .= '<b class="cfx-bnav-n"' . ($count ? '' : ' hidden') . '>' . esc_html($count > 99 ? '99+' : intval($count)) . '</b>';
             }
             $o .= '<span>' . esc_html($it[2]) . '</span></a>';
         }
@@ -449,8 +449,8 @@ add_action('wp_footer', function () {
 // Keep the cart count fresh after ajax add-to-cart.
 add_filter('woocommerce_add_to_cart_fragments', function ($f) {
     $n = WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
-    $f['.cfx-bnav b.cfx-bnav-n'] = '<b class="cfx-bnav-n"' . ($n ? '' : ' hidden') . '>' . intval($n) . '</b>';
-    $f['.cfx-side b.cfx-bnav-n'] = '<b class="cfx-bnav-n"' . ($n ? '' : ' hidden') . '>' . intval($n) . '</b>';
+    $f['.cfx-bnav b.cfx-bnav-n'] = '<b class="cfx-bnav-n"' . ($n ? '' : ' hidden') . '>' . esc_html($n > 99 ? '99+' : intval($n)) . '</b>';
+    $f['.cfx-side b.cfx-bnav-n'] = '<b class="cfx-bnav-n"' . ($n ? '' : ' hidden') . '>' . esc_html($n > 99 ? '99+' : intval($n)) . '</b>';
     return $f;
 });
 
