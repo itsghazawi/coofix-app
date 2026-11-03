@@ -10,7 +10,12 @@ permissions:
 
 jobs:
   ios:
-    runs-on: macos-latest
+    # Several runner types in parallel: GitHub's macOS arm64 pool is often full.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, macos-14, macos-26]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +41,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Coofix-Syria-unsigned-ipa
+          name: Coofix-Syria-unsigned-ipa-${{ matrix.os }}
           path: Coofix-Syria-unsigned.ipa
           retention-days: 30
 
@@ -48,5 +53,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add Coofix-Syria-unsigned.ipa
-          git commit -qm "iOS build ${GITHUB_SHA::7}"
+          git commit -qm "iOS build ${GITHUB_SHA::7} (${{ matrix.os }})"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" builds
