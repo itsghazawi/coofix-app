@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'key.dart';
+import 'dart:math' as math;
 
 // ---------------------------------------------------------------- theme
 const ink = Color(0xFF061922);
@@ -31,40 +31,100 @@ TextStyle b(double s, {Color c = textC, FontWeight w = FontWeight.w400, double h
     TextStyle(fontFamily: 'Plex', fontSize: s, color: c, fontWeight: w, height: height);
 
 // ---------------------------------------------------------------- api
+class SessionExpired implements Exception {
+  final String msg;
+  SessionExpired([this.msg = 'انتهت الجلسة، سجّل الدخول من جديد']);
+  @override
+  String toString() => msg;
+}
+
+final navKey = GlobalKey<NavigatorState>();
+
 class Api {
   static String site = 'https://www.coofix.sy';
-  static String key = kDefaultKey;
+  static String token = '';
   static String staff = '';
+  static String username = '';
 
   static Future<void> load() async {
     final p = await SharedPreferences.getInstance();
     site = p.getString('site') ?? site;
-    key = p.getString('key') ?? key;
-    staff = p.getString('staff') ?? '';
+    token = p.getString('token') ?? '';
+    staff = p.getString('staff_name') ?? '';
+    username = p.getString('username') ?? '';
   }
 
-  static Future<void> save({String? s, String? k, String? st}) async {
+  static Future<void> saveSite(String s) async {
     final p = await SharedPreferences.getInstance();
-    if (s != null) await p.setString('site', site = s.trim().replaceAll(RegExp(r'/+$'), ''));
-    if (k != null) await p.setString('key', key = k.trim());
-    if (st != null) await p.setString('staff', staff = st.trim());
+    await p.setString('site', site = s.trim().replaceAll(RegExp(r'/+$'), ''));
   }
 
   static Uri u(String path, [Map<String, String>? q]) => Uri.parse('$site/wp-json/coofix-app/v1$path').replace(queryParameters: q);
-  static Map<String, String> get headers => {'X-Coofix-Key': key};
+  static Map<String, String> get headers => {'X-Coofix-Token': token};
+
+  static String _msg(http.Response r, String def) {
+    try {
+      final m = (jsonDecode(utf8.decode(r.bodyBytes)) as Map)['message'];
+      if (m is String && m.isNotEmpty) return m;
+    } catch (_) {}
+    return def;
+  }
+
+  static Future<void> login(String user, String pass) async {
+    final r = await http
+        .post(u('/staff/login'), headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'username': user.trim(), 'password': pass, 'device': Platform.operatingSystem}))
+        .timeout(const Duration(seconds: 20));
+    if (r.statusCode == 404) throw 'إضافة كوفيكس على الموقع بحاجة لتحديث';
+    if (r.statusCode != 200) throw _msg(r, 'تعذّر تسجيل الدخول (${r.statusCode})');
+    final j = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
+    final p = await SharedPreferences.getInstance();
+    token = '${j['token']}';
+    staff = '${(j['user'] as Map)['name']}';
+    username = '${(j['user'] as Map)['username']}';
+    await p.setString('token', token);
+    await p.setString('staff_name', staff);
+    await p.setString('username', username);
+  }
+
+  static Future<void> clearSession() async {
+    token = '';
+    final p = await SharedPreferences.getInstance();
+    await p.remove('token');
+  }
+
+  static Future<void> logout() async {
+    try {
+      await http.post(u('/staff/logout'), headers: headers).timeout(const Duration(seconds: 8));
+    } catch (_) {}
+    await clearSession();
+  }
+
+  static Future<void> _check(http.Response r) async {
+    if (r.statusCode == 401 || r.statusCode == 403) {
+      await clearSession();
+      throw SessionExpired(_msg(r, 'انتهت الجلسة، سجّل الدخول من جديد'));
+    }
+  }
 
   static Future<Map<String, dynamic>> info() async {
     final r = await http.get(u('/staff/info'), headers: headers).timeout(const Duration(seconds: 15));
-    if (r.statusCode == 401) throw 'مفتاح البرنامج غير صالح — راجع الإعدادات';
+    await _check(r);
     if (r.statusCode == 404) throw 'إضافة كوفيكس غير مثبتة أو غير محدّثة على الموقع';
     if (r.statusCode != 200) throw 'خطأ في الاتصال (${r.statusCode})';
     return jsonDecode(utf8.decode(r.bodyBytes)) as Map<String, dynamic>;
   }
 
-  static Future<List<Map<String, dynamic>>> list({String q = ''}) async {
-    final r = await http.get(u('/staff/repairs', {if (q.isNotEmpty) 'q': q}), headers: headers).timeout(const Duration(seconds: 20));
+  static Map<String, dynamic> counts = {};
+
+  static Future<List<Map<String, dynamic>>> list({String q = '', String state = 'all'}) async {
+    final r = await http
+        .get(u('/staff/repairs', {if (q.isNotEmpty) 'q': q, if (state != 'all') 'state': state}), headers: headers)
+        .timeout(const Duration(seconds: 20));
+    await _check(r);
     if (r.statusCode != 200) throw 'تعذّر تحميل الطلبات (${r.statusCode})';
     final j = jsonDecode(utf8.decode(r.bodyBytes));
+    counts = j['counts'] is Map ? (j['counts'] as Map).cast<String, dynamic>() : {};
     return (j['items'] as List).map((e) => (e as Map).cast<String, dynamic>()).toList();
   }
 
@@ -78,6 +138,7 @@ class Api {
     if (warrantyPhoto != null) req.files.add(await http.MultipartFile.fromPath('warranty_card', warrantyPhoto.path));
     final res = await http.Response.fromStream(await req.send().timeout(const Duration(seconds: 120)));
     final body = utf8.decode(res.bodyBytes);
+    await _check(res);
     if (res.statusCode != 201) {
       String msg = 'تعذّر الحفظ (${res.statusCode})';
       try {
@@ -136,9 +197,15 @@ class ServiceApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: amber, primary: amberDeep, surface: bg),
         snackBarTheme: SnackBarThemeData(backgroundColor: ink, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
-      home: const HomeScreen(),
+      navigatorKey: navKey,
+      home: Api.token.isEmpty ? const LoginScreen() : const HomeScreen(),
     );
   }
+}
+
+/// Back to the login screen (session expired / logged out).
+void goLogin([String? msg]) {
+  navKey.currentState?.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginScreen(message: msg)), (_) => false);
 }
 
 void snack(BuildContext c, String m) => ScaffoldMessenger.of(c)
@@ -158,27 +225,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String? error;
   bool loading = true;
   final search = TextEditingController();
+  String state = 'open';
 
   @override
   void initState() {
     super.initState();
     _load();
-    if (Api.staff.isEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _askName());
-  }
-
-  Future<void> _askName() async {
-    final c = TextEditingController();
-    final n = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('اسم الموظف', style: h(18)),
-        content: TextField(controller: c, autofocus: true, decoration: const InputDecoration(hintText: 'يظهر في سجل كل طلب')),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('حفظ'))],
-      ),
-    );
-    if (n != null && n.trim().isNotEmpty) await Api.save(st: n);
   }
 
   Future<void> _load() async {
@@ -187,9 +239,12 @@ class _HomeScreenState extends State<HomeScreen> {
       error = null;
     });
     try {
-      final r = await Future.wait([Api.info(), Api.list(q: search.text.trim())]);
+      final r = await Future.wait([Api.info(), Api.list(q: search.text.trim(), state: state)]);
       info = r[0] as Map<String, dynamic>;
       items = r[1] as List<Map<String, dynamic>>;
+    } on SessionExpired catch (e) {
+      goLogin(e.msg);
+      return;
     } catch (e) {
       error = e is String ? e : 'تعذّر الاتصال بالموقع، تحقق من الإنترنت';
     }
@@ -227,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('صيانة كوفيكس', style: h(20, c: Colors.white)),
-                        Text(Api.staff.isEmpty ? 'برنامج الاستلام' : 'الموظف: ${Api.staff}', style: b(12.5, c: Colors.white.withValues(alpha: 0.6))),
+                        Text(Api.staff.isEmpty ? 'برنامج الاستلام' : 'أهلاً، ${Api.staff}', style: b(12.5, c: Colors.white.withValues(alpha: 0.6))),
                       ]),
                     ),
                     IconButton(
@@ -275,6 +330,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]),
               ),
             ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Row(children: [
+                  for (final f in const [('all', 'الكل', Icons.all_inbox_rounded), ('open', 'لم يتم التسليم', Icons.pending_actions_rounded), ('delivered', 'تم التسليم', Icons.task_alt_rounded)]) ...[
+                    Expanded(child: _FilterChip(
+                      label: f.$2,
+                      icon: f.$3,
+                      count: Api.counts[f.$1],
+                      on: state == f.$1,
+                      onTap: () {
+                        if (state == f.$1) return;
+                        setState(() => state = f.$1);
+                        _load();
+                      },
+                    )),
+                    if (f.$1 != 'delivered') const SizedBox(width: 8),
+                  ],
+                ]),
+              ),
+            ),
             if (loading)
               const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator(color: amberDeep)))
             else if (error != null)
@@ -293,7 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               )
             else if (items.isEmpty)
-              SliverFillRemaining(hasScrollBody: false, child: Center(child: Text('لا توجد طلبات بعد', style: b(15, c: muted))))
+              SliverFillRemaining(hasScrollBody: false, child: Center(child: Text(state == 'delivered' ? 'لا توجد طلبات مُسلَّمة' : state == 'open' ? 'لا توجد طلبات بانتظار التسليم' : 'لا توجد طلبات بعد', style: b(15, c: muted))))
             else
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
@@ -305,6 +381,49 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final dynamic count;
+  final bool on;
+  final VoidCallback onTap;
+  const _FilterChip({required this.label, required this.icon, required this.count, required this.on, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: on ? inkGrad : null,
+          color: on ? null : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: on ? ink : line),
+          boxShadow: on ? [BoxShadow(color: ink.withValues(alpha: 0.25), blurRadius: 14, offset: const Offset(0, 6))] : null,
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, size: 17, color: on ? amber : muted),
+            if (count != null) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                decoration: BoxDecoration(color: on ? amber : bg, borderRadius: BorderRadius.circular(20)),
+                child: Text('$count', style: h(11.5, c: on ? ink : textC)),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 5),
+          FittedBox(child: Text(label, maxLines: 1, style: h(12.5, c: on ? Colors.white : textC, w: FontWeight.w600))),
+        ]),
       ),
     );
   }
@@ -502,10 +621,12 @@ class _NewRepairScreenState extends State<NewRepairScreen> {
         'accessories_text': accessories ? accText.text.trim() : '',
         'warranty': warranty ? '1' : '0',
         'purchase_date': purchase == null ? '' : purchase!.toIso8601String().substring(0, 10),
-        'staff': Api.staff,
       }, photos, warranty ? warrantyPhoto : null);
       if (!mounted) return;
       await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => DoneScreen(r)));
+    } on SessionExpired catch (e) {
+      goLogin(e.msg);
+      return;
     } catch (e) {
       if (mounted) snack(context, e is String ? e : 'تعذّر الحفظ، تحقق من الإنترنت');
     }
@@ -719,34 +840,326 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final staff = TextEditingController(text: Api.staff);
   final site = TextEditingController(text: Api.site);
-  final key = TextEditingController(text: Api.key);
   bool advanced = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('الإعدادات', style: h(18)), backgroundColor: bg),
+      appBar: AppBar(title: Text('الحساب والإعدادات', style: h(18)), backgroundColor: bg),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        TextField(controller: staff, decoration: const InputDecoration(labelText: 'اسم الموظف', border: OutlineInputBorder())),
-        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(gradient: inkGrad, borderRadius: BorderRadius.circular(22)),
+          child: Row(children: [
+            Container(
+              width: 52, height: 52,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(gradient: amberGrad, borderRadius: BorderRadius.circular(16)),
+              child: Text(Api.staff.isEmpty ? '؟' : Api.staff.characters.first, style: h(22, c: ink)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(Api.staff, style: h(17, c: Colors.white)),
+              Text('@${Api.username}', textDirection: TextDirection.ltr, style: b(13, c: Colors.white.withValues(alpha: 0.6))),
+            ])),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFB42318),
+            side: const BorderSide(color: Color(0xFFF1B4AE)),
+            minimumSize: const Size.fromHeight(52),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          onPressed: () async {
+            final ok = await showDialog<bool>(
+              context: context,
+              builder: (c) => AlertDialog(
+                title: Text('تسجيل الخروج؟', style: h(18)),
+                content: const Text('بتحتاج اسم المستخدم وكلمة المرور لتدخل مرة ثانية.'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')),
+                  TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('خروج')),
+                ],
+              ),
+            );
+            if (ok == true) {
+              await Api.logout();
+              goLogin();
+            }
+          },
+          icon: const Icon(Icons.logout_rounded),
+          label: Text('تسجيل الخروج', style: h(15, c: const Color(0xFFB42318))),
+        ),
+        const SizedBox(height: 24),
         TextButton(onPressed: () => setState(() => advanced = !advanced), child: Text(advanced ? 'إخفاء الإعدادات المتقدمة' : 'إعدادات متقدمة')),
         if (advanced) ...[
           TextField(controller: site, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'رابط الموقع', border: OutlineInputBorder())),
           const SizedBox(height: 12),
-          TextField(controller: key, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'مفتاح البرنامج', helperText: 'من ووردبريس ← تطبيق كوفيكس ← إعدادات الصيانة', border: OutlineInputBorder())),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: ink, minimumSize: const Size.fromHeight(52)),
+            onPressed: () async {
+              await Api.saveSite(site.text);
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('حفظ'),
+          ),
         ],
-        const SizedBox(height: 20),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: ink, minimumSize: const Size.fromHeight(52)),
-          onPressed: () async {
-            await Api.save(st: staff.text, s: site.text, k: key.text);
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: const Text('حفظ'),
-        ),
       ]),
     );
   }
+}
+
+// ---------------------------------------------------------------- login
+class LoginScreen extends StatefulWidget {
+  final String? message;
+  const LoginScreen({super.key, this.message});
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+  final user = TextEditingController(text: Api.username);
+  final pass = TextEditingController();
+  final passFocus = FocusNode();
+  bool hide = true, busy = false;
+  String? error;
+  late final AnimationController glow = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
+
+  @override
+  void initState() {
+    super.initState();
+    error = widget.message;
+  }
+
+  @override
+  void dispose() {
+    glow.dispose();
+    super.dispose();
+  }
+
+  Future<void> _go() async {
+    FocusScope.of(context).unfocus();
+    if (user.text.trim().isEmpty || pass.text.isEmpty) {
+      setState(() => error = 'أدخل اسم المستخدم وكلمة المرور');
+      return;
+    }
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await Api.login(user.text, pass.text);
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
+      Navigator.of(context).pushAndRemoveUntil(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 450),
+          pageBuilder: (_, _, _) => const HomeScreen(),
+          transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
+        ),
+        (_) => false,
+      );
+      return;
+    } catch (e) {
+      error = e is String ? e : 'تعذّر الاتصال بالموقع، تحقق من الإنترنت';
+    }
+    if (mounted) setState(() => busy = false);
+  }
+
+  InputDecoration _dec(String label, IconData icon, {Widget? suffix}) => InputDecoration(
+        hintText: label,
+        hintStyle: b(15, c: Colors.white.withValues(alpha: 0.4)),
+        prefixIcon: Icon(icon, color: amber.withValues(alpha: 0.9), size: 21),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.black.withValues(alpha: 0.25),
+        contentPadding: const EdgeInsets.symmetric(vertical: 17, horizontal: 16),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.10))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: amber, width: 1.4)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final pad = MediaQuery.paddingOf(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: ink,
+        body: Stack(children: [
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF0D2F3E), ink, Color(0xFF020A0E)]),
+              ),
+            ),
+          ),
+          Positioned.fill(child: CustomPaint(painter: _HexPainter())),
+          Positioned(
+            top: -120, right: -100,
+            child: Container(width: 320, height: 320, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [amber.withValues(alpha: 0.22), amber.withValues(alpha: 0)]))),
+          ),
+          Positioned(
+            bottom: -140, left: -120,
+            child: Container(width: 340, height: 340, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [amber.withValues(alpha: 0.10), amber.withValues(alpha: 0)]))),
+          ),
+          SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, pad.top + 48, 24, pad.bottom + 24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(children: [
+                  AnimatedBuilder(
+                    animation: glow,
+                    builder: (_, child) => Container(
+                      width: 104, height: 104,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        gradient: const LinearGradient(begin: Alignment.topRight, end: Alignment.bottomLeft, colors: [Color(0xFF14394B), ink]),
+                        border: Border.all(color: amber.withValues(alpha: 0.35 + glow.value * 0.25)),
+                        boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.18 + glow.value * 0.22), blurRadius: 34 + glow.value * 16, offset: const Offset(0, 12))],
+                      ),
+                      padding: const EdgeInsets.all(18),
+                      child: child,
+                    ),
+                    child: Image.asset('assets/img/icon.png'),
+                  ),
+                  const SizedBox(height: 22),
+                  Text('صيانة كوفيكس', style: h(26, c: Colors.white)),
+                  const SizedBox(height: 6),
+                  Text('بوابة فريق الصيانة المعتمد', style: b(14, c: Colors.white.withValues(alpha: 0.55))),
+                  const SizedBox(height: 34),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(26),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(26),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Text('تسجيل الدخول', style: h(19, c: Colors.white)),
+                        const SizedBox(height: 4),
+                        Text('ادخل بالحساب يلي عطتك ياه الإدارة', style: b(13, c: Colors.white.withValues(alpha: 0.5))),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: user,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.next,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          keyboardType: TextInputType.visiblePassword,
+                          cursorColor: amber,
+                          onSubmitted: (_) => passFocus.requestFocus(),
+                          style: b(16, c: Colors.white, w: FontWeight.w500),
+                          decoration: _dec('اسم المستخدم', Icons.person_rounded),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: pass,
+                          focusNode: passFocus,
+                          obscureText: hide,
+                          textDirection: TextDirection.ltr,
+                          textInputAction: TextInputAction.done,
+                          cursorColor: amber,
+                          onSubmitted: (_) => _go(),
+                          style: b(16, c: Colors.white, w: FontWeight.w500),
+                          decoration: _dec('كلمة المرور', Icons.lock_rounded,
+                              suffix: IconButton(
+                                onPressed: () => setState(() => hide = !hide),
+                                icon: Icon(hide ? Icons.visibility_rounded : Icons.visibility_off_rounded, color: Colors.white54),
+                              )),
+                        ),
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          child: error == null
+                              ? const SizedBox(height: 18)
+                              : Container(
+                                  margin: const EdgeInsets.only(top: 14, bottom: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF6B5B).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(color: const Color(0xFFFF6B5B).withValues(alpha: 0.35)),
+                                  ),
+                                  child: Row(children: [
+                                    const Icon(Icons.error_outline_rounded, color: Color(0xFFFF8A7D), size: 19),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(error!, style: b(13.5, c: const Color(0xFFFFB4AA), w: FontWeight.w500))),
+                                  ]),
+                                ),
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: busy ? null : _go,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 150),
+                            opacity: busy ? 0.75 : 1,
+                            child: Container(
+                              height: 56,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: amberGrad,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [BoxShadow(color: amber.withValues(alpha: 0.35), blurRadius: 22, offset: const Offset(0, 10))],
+                              ),
+                              child: busy
+                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.6, color: ink))
+                                  : Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Text('دخول', style: h(17, c: ink)),
+                                      const SizedBox(width: 8),
+                                      const Icon(Icons.arrow_back_rounded, color: ink, size: 20),
+                                    ]),
+                            ),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  const SizedBox(height: 26),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.verified_user_rounded, size: 15, color: Colors.white.withValues(alpha: 0.35)),
+                    const SizedBox(width: 6),
+                    Text('للاستخدام الداخلي — كوفيكس سوريا', style: b(12, c: Colors.white.withValues(alpha: 0.35))),
+                  ]),
+                ]),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Subtle honeycomb pattern (Coofix hexagon).
+class _HexPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = amber.withValues(alpha: 0.055);
+    const r = 26.0;
+    final w = math.sqrt(3) * r, hgt = 1.5 * r;
+    for (var row = -1; row * hgt < size.height + r; row++) {
+      for (var col = -1; col * w < size.width + w; col++) {
+        final cx = col * w + (row.isOdd ? w / 2 : 0), cy = row * hgt;
+        final path = Path();
+        for (var i = 0; i < 6; i++) {
+          final a = math.pi / 180 * (60 * i - 30);
+          final x = cx + r * math.cos(a), y = cy + r * math.sin(a);
+          i == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+        }
+        path.close();
+        canvas.drawPath(path, p);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

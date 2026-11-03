@@ -531,3 +531,62 @@ add_action('woocommerce_before_shop_loop', function () {
     }
     echo '</div><div class="cfx-sec-head cfx-shop-head"><div><h2>كل المنتجات</h2></div></div>';
 }, 5);
+
+/* Product tabs: "المواصفات الفنية" first (opens by default), then "وصف المنتج". */
+add_filter('woocommerce_product_tabs', function ($tabs) {
+    if (!cfx_site_on()) {
+        return $tabs;
+    }
+    if (isset($tabs['additional_information'])) {
+        $tabs['additional_information']['title'] = 'المواصفات الفنية';
+        $tabs['additional_information']['priority'] = 5;
+    }
+    if (isset($tabs['description'])) {
+        $tabs['description']['title'] = 'وصف المنتج';
+        $tabs['description']['priority'] = 10;
+    }
+    unset($tabs['reviews']);
+    return $tabs;
+}, 99);
+add_filter('woocommerce_product_additional_information_heading', function ($h) { return cfx_site_on() ? 'المواصفات الفنية' : $h; });
+add_filter('woocommerce_product_description_heading', function ($h) { return cfx_site_on() ? 'وصف المنتج' : $h; });
+
+// No reviews on the website: hide star ratings too.
+add_action('wp', function () {
+    if (cfx_site_on()) {
+        remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10);
+        remove_action('woocommerce_after_shop_loop_item_title', 'woocommerce_template_loop_rating', 5);
+    }
+});
+
+// Product meta (category / SKU) as app-style chips.
+add_action('wp', function () {
+    if (!cfx_site_on() || !is_product()) {
+        return;
+    }
+    remove_action('woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40);
+    add_action('woocommerce_single_product_summary', function () {
+        global $product;
+        if (!$product) {
+            return;
+        }
+        $cfg = coofix_app_get_config();
+        $terms = get_the_terms($product->get_id(), 'product_cat');
+        echo '<div class="cfx-meta">';
+        if ($terms && !is_wp_error($terms)) {
+            foreach ($terms as $t) {
+                if ($t->slug === 'uncategorized') {
+                    continue;
+                }
+                echo '<a class="cfx-meta-cat" href="' . esc_url(get_term_link($t)) . '">'
+                    . '<span class="cfx-meta-ic">' . cfx_svg(cfx_cat_icon_key($t, $cfg), 20) . '</span>'
+                    . '<span class="cfx-meta-tx"><small>القسم</small><b>' . esc_html($t->name) . '</b></span>'
+                    . '<span class="cfx-meta-go">' . cfx_svg('arrow', 18) . '</span></a>';
+            }
+        }
+        if ($product->get_sku()) {
+            echo '<span class="cfx-meta-sku"><small>رمز المنتج</small><b dir="ltr">' . esc_html($product->get_sku()) . '</b></span>';
+        }
+        echo '</div>';
+    }, 40);
+});

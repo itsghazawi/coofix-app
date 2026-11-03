@@ -38,6 +38,7 @@ function cfx_repair_settings() {
     }
     $s = wp_parse_args($s, array(
         'staff_key'  => '',
+        'allow_key'  => 0,
         'weekday'    => 3, // 0 = Sunday … 3 = Wednesday
         'pickup_days'=> 1, // delivery starts the next day (Thursday)
         'pickup_note'=> 'صباحاً',
@@ -477,6 +478,7 @@ function cfx_repair_settings_page() {
         $s['currency'] = sanitize_text_field(wp_unslash($_POST['currency']));
         $s['notify_tpl'] = sanitize_textarea_field(wp_unslash($_POST['notify_tpl']));
         $s['receipt_tpl'] = sanitize_textarea_field(wp_unslash($_POST['receipt_tpl']));
+        $s['allow_key'] = empty($_POST['allow_key']) ? 0 : 1;
         if (!empty($_POST['regen'])) {
             $s['staff_key'] = wp_generate_password(32, false, false);
         }
@@ -501,9 +503,8 @@ function cfx_repair_settings_page() {
                     <p class="description">المتغيرات: {name} {code} {product} {date} {pickup} {status}</p></td></tr>
                 <tr><th>رسالة التحديث (واتساب)</th><td><textarea name="notify_tpl" rows="5" class="large-text"><?php echo esc_textarea($s['notify_tpl']); ?></textarea>
                     <p class="description">المتغيرات: {name} {code} {status} {note} {cost} {date} {product}</p></td></tr>
-                <tr><th>مفتاح برنامج الموظف</th><td><code dir="ltr" style="font-size:14px;padding:6px 10px;display:inline-block"><?php echo esc_html($s['staff_key']); ?></code>
-                    <p class="description">هذا المفتاح مدمج في برنامج الموظف. توليد مفتاح جديد يوقف كل نسخ البرنامج القديمة فوراً (مثلاً عند ضياع جهاز).</p>
-                    <label><input type="checkbox" name="regen" value="1"> توليد مفتاح جديد</label></td></tr>
+                <tr><th>دخول الموظفين</th><td><p style="margin-top:0">برنامج الصيانة مقفول بتسجيل دخول. أضف الموظفين وكلمات مرورهم من صفحة <a href="<?php echo esc_url(admin_url('edit.php?post_type=cfx_repair&page=coofix-staff')); ?>"><strong>الموظفون</strong></a>.</p>
+                    <label><input type="checkbox" name="allow_key" value="1" <?php checked(!empty($s['allow_key'])); ?>> السماح بالمفتاح القديم المشترك (غير مستحسن — للنسخ القديمة من البرنامج فقط)</label></td></tr>
             </table>
             <?php submit_button('حفظ'); ?>
         </form>
@@ -516,14 +517,25 @@ function cfx_repair_settings_page() {
 /* ------------------------------------------------------------------ */
 
 function cfx_staff_auth(WP_REST_Request $r) {
-    $key = $r->get_header('x-coofix-key');
-    if (!$key) {
-        $key = $r->get_param('key');
+    // 1) Personal login token (WordPress user with the technician role)
+    $token = $r->get_header('x-coofix-token');
+    if ($token) {
+        $u = cfx_token_user($token);
+        if ($u) {
+            $GLOBALS['cfx_staff_user'] = $u;
+            return true;
+        }
+        return new WP_Error('cfx_session', 'انتهت الجلسة، سجّل الدخول من جديد', array('status' => 401));
     }
+    // 2) Legacy shared key — only if the admin explicitly allows it
     $s = cfx_repair_settings();
-    return is_string($key) && $key !== '' && hash_equals($s['staff_key'], $key)
-        ? true
-        : new WP_Error('cfx_forbidden', 'مفتاح غير صالح', array('status' => 401));
+    if (!empty($s['allow_key'])) {
+        $key = $r->get_header('x-coofix-key');
+        if (is_string($key) && $key !== '' && hash_equals($s['staff_key'], $key)) {
+            return true;
+        }
+    }
+    return new WP_Error('cfx_session', 'سجّل الدخول باسم المستخدم وكلمة المرور', array('status' => 401));
 }
 
 /** Data the customer may see. */
@@ -640,12 +652,27 @@ add_action('rest_api_init', function () {
                 if ($q !== '') {
                     $args['s'] = $q;
                 }
-                if ($r->get_param('status')) {
+                $state = sanitize_key((string) $r->get_param('state'));
+                $counts = array();
+                foreach (array('all' => null, 'open' => '!=', 'delivered' => '=') as $k => $cmp) {
+                    $ca = $args;
+                    $ca['posts_per_page'] = 1;
+                    $ca['paged'] = 1;
+                    if ($cmp) {
+                        $ca['meta_query'] = array(array('key' => '_cfx_status', 'value' => 'delivered', 'compare' => $cmp));
+                    }
+                    $counts[$k] = intval((new WP_Query($ca))->found_posts);
+                }
+                if ($state === 'delivered') {
+                    $args['meta_query'] = array(array('key' => '_cfx_status', 'value' => 'delivered'));
+                } elseif ($state === 'open') {
+                    $args['meta_query'] = array(array('key' => '_cfx_status', 'value' => 'delivered', 'compare' => '!='));
+                } elseif ($r->get_param('status')) {
                     $args['meta_key'] = '_cfx_status';
                     $args['meta_value'] = sanitize_key($r->get_param('status'));
                 }
                 $wq = new WP_Query($args);
-                return array('items' => array_map('cfx_repair_staff', $wq->posts), 'total' => intval($wq->found_posts));
+                return array('items' => array_map('cfx_repair_staff', $wq->posts), 'total' => intval($wq->found_posts), 'counts' => $counts);
             },
         ),
         // ---- Staff: create (multipart: fields + photos[] + warranty_photo)
@@ -668,7 +695,8 @@ function cfx_staff_create(WP_REST_Request $r) {
     if (is_wp_error($id)) {
         return $id;
     }
-    $staff = sanitize_text_field(isset($p['staff']) ? $p['staff'] : '');
+    $me = cfx_current_staff();
+    $staff = $me ? $me->display_name : sanitize_text_field(isset($p['staff']) ? $p['staff'] : '');
     $d = cfx_repair_get($id);
     $d['code'] = cfx_new_code();
     $d['name'] = $name;
@@ -685,6 +713,9 @@ function cfx_staff_create(WP_REST_Request $r) {
     $d['created'] = time();
     $d['created_by'] = $staff !== '' ? $staff : 'برنامج الصيانة';
     $d['timeline'] = array(array('time' => time(), 'status' => 'received', 'note' => '', 'public' => true, 'by' => $d['created_by']));
+    if ($me) {
+        update_post_meta($id, '_cfx_by', $me->ID);
+    }
 
     // Photos
     if (file_exists(ABSPATH . 'wp-admin/includes/file.php')) { require_once ABSPATH . 'wp-admin/includes/file.php'; }

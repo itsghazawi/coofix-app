@@ -393,3 +393,20 @@ body.cfx-skin.woocommerce-shop .ct-container[data-sidebar],body.cfx-skin.tax-pro
 @media (max-width:999px){
   body.cfx-skin #main > .ct-container,body.cfx-skin #main > div > .ct-container{padding-inline:16px!important;width:auto!important}
 }
+
+/* Product meta chips */
+body.cfx-skin .cfx-meta{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 4px;clear:both}
+body.cfx-skin .cfx-meta small{display:block;font-size:11.5px;color:var(--cfx-muted);font-weight:500;line-height:1.2}
+body.cfx-skin .cfx-meta b{display:block;font-size:15px;font-weight:700;color:var(--cfx-text);line-height:1.35}
+body.cfx-skin .cfx-meta-cat{display:flex;align-items:center;gap:12px;padding:10px 12px 10px 14px;border-radius:18px;background:#fff;
+  border:1px solid var(--cfx-line,#e6e3dd);text-decoration:none!important;box-shadow:0 6px 18px rgba(6,25,34,.06);transition:transform .15s,box-shadow .2s,border-color .2s;min-width:200px}
+body.cfx-skin .cfx-meta-cat:hover{transform:translateY(-1px);border-color:var(--cfx-amber);box-shadow:0 10px 24px rgba(250,162,27,.18)}
+body.cfx-skin .cfx-meta-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;
+  background:var(--cfx-inkgrad);color:var(--cfx-amber)}
+body.cfx-skin .cfx-meta-ic svg{fill:currentColor}
+body.cfx-skin .cfx-meta-tx{flex:1}
+body.cfx-skin .cfx-meta-go{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--cfx-bg,#f4f3f0);color:var(--cfx-text)}
+body.cfx-skin .cfx-meta-go svg{fill:currentColor}
+body.cfx-skin .cfx-meta-sku{display:flex;flex-direction:column;justify-content:center;padding:10px 16px;border-radius:18px;background:var(--cfx-bg,#f4f3f0);border:1px dashed var(--cfx-line,#e0ddd6)}
+@media (max-width:600px){body.cfx-skin .cfx-meta-cat{flex:1 1 100%}}
+body.cfx-skin.single-product .product_meta{display:none!important}
