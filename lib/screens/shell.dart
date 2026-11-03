@@ -20,6 +20,7 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
+  static _ShellState? current;
   int tab = 0;
 
   static const keys = ['home', 'categories', 'cart', 'favorites', 'more'];
@@ -42,6 +43,7 @@ class _ShellState extends State<Shell> {
   @override
   void initState() {
     super.initState();
+    current = this;
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
     WidgetsBinding.instance.addPostFrameCallback((_) => _startupNotices());
   }
@@ -188,4 +190,10 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Jump to the cart tab from anywhere (closes pushed pages first).
+void openCartTab(BuildContext context) {
+  Navigator.of(context).popUntil((r) => r.isFirst);
+  _ShellState.current?.goKey('cart');
 }

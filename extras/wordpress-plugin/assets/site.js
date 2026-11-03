@@ -205,22 +205,11 @@
     if (btn.dataset.busy) return;
     btn.dataset.busy = '1';
     if (!btn.dataset.l && lbl) btn.dataset.l = lbl.textContent;
-    if (lbl) lbl.textContent = 'جاري تجهيز الفاتورة…';
     var touch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
     var win = touch ? null : window.open('', '_blank'); // computers: open the tab now (popup rules)
-    var dt = now.getFullYear() + '/' + p2(now.getMonth() + 1) + '/' + p2(now.getDate()) + ' — ' + p2(now.getHours()) + ':' + p2(now.getMinutes());
-    var payload = { number: num, date: dt, name: v.name, phone: v.phone, addr: v.gov + ' — ' + v.area, items: x.items, sub: x.sub || '', disc: x.disc || '', coupons: (x.coupons || []).join('، '), total: x.total };
-    function go(link) {
-      var text = L.join('\n');
-      if (link) text += '\n\n🧾 الفاتورة (PDF): ' + link;
-      var url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(text);
-      if (lbl) lbl.textContent = btn.dataset.l;
-      delete btn.dataset.busy;
-      if (win) { win.location.href = url; } else { location.href = url; }
-    }
-    fetch('/wp-json/coofix-app/v1/order-link', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-      .then(function (r) { return r.json(); })
-      .then(function (j) { go(j && j.url ? j.url : ''); })
-      .catch(function () { go(''); });
+    var url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(L.join('\n'));
+    if (lbl) lbl.textContent = btn.dataset.l;
+    delete btn.dataset.busy;
+    if (win) { win.location.href = url; } else { location.href = url; }
   });
 })();

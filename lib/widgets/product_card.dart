@@ -6,6 +6,7 @@ import '../data/store.dart';
 import '../screens/product.dart';
 import '../theme.dart';
 import 'extras.dart';
+import '../screens/shell.dart';
 import 'ui.dart';
 
 void openProduct(BuildContext context, Product p, {String tag = 'feat'}) {
@@ -128,7 +129,7 @@ class _AddButton extends StatelessWidget {
       scale: 0.85,
       onTap: () {
         Store.i.add(p);
-        toast(context, 'أضيف إلى السلة', icon: Icons.shopping_bag_rounded);
+        cartToast(context, 'أضيف إلى السلة', () => openCartTab(context));
       },
       child: Container(
         width: 36,

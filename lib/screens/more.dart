@@ -419,6 +419,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
       if ('${r['expected_at'] ?? ''}'.isNotEmpty) ('التسليم ابتداءً من', '${r['expected_at']}'),
       if ('${r['cost'] ?? ''}'.isNotEmpty) ('التكلفة', '${r['cost']}'),
       if (r['warranty'] != null) ('ضمن الكفالة', r['warranty'] == true ? 'نعم' : 'لا'),
+      if ('${r['received_by'] ?? ''}'.isNotEmpty) ('استلمها الموظف', '${r['received_by']}'),
     ];
     return Container(
       decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(24), border: Border.all(color: C.line)),

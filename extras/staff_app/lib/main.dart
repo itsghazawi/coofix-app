@@ -10,7 +10,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'docs.dart';
 
 import 'dart:math' as math;
 
@@ -169,27 +168,19 @@ String waNumber(String phone) {
   return n;
 }
 
-/// Intake receipt → PDF → customer's WhatsApp (falls back to a text message).
+/// Intake receipt → WhatsApp text to the customer (includes the receiving employee).
 Future<void> sendReceipt(BuildContext context, Map<String, dynamic> r, {Uint8List? photo}) async {
-  final text = '${r['receipt_message'] ?? 'رقم طلب الصيانة: ${r['code']}'}';
-  try {
-    photo ??= await fetchBytes(((r['photo_urls'] as List?) ?? const []).isNotEmpty ? '${(r['photo_urls'] as List).first}' : '');
-    final png = await Docs.png(ReceiptDoc(r: r, site: Api.site, photo: photo), const Size(794, 1123));
-    final pdf = await Docs.pdfFromPng(png);
-    await Docs.sendToWhatsApp(pdf, 'Coofix-${r['code']}.pdf', mime: 'application/pdf', phone: waNumber('${r['phone']}'), text: text);
-  } catch (_) {
-    await openWa('${r['phone']}', text);
-  }
+  await openWa('${r['phone']}', '${r['receipt_message'] ?? 'رقم طلب الصيانة: ${r['code']}'}');
 }
 
-/// Status update card → PNG → customer's WhatsApp.
+/// Status update → WhatsApp text to the customer.
 Future<void> sendStatus(Map<String, dynamic> r, {String note = '', String text = ''}) async {
-  try {
-    final png = await Docs.png(StatusDoc(r: r, note: note), const Size(1080, 1350), ratio: 1);
-    await Docs.sendToWhatsApp(png, 'Coofix-${r['code']}-status.png', mime: 'image/png', phone: waNumber('${r['phone']}'), text: text);
-  } catch (_) {
-    await openWa('${r['phone']}', text);
+  var t = text.trim();
+  if (t.isEmpty) {
+    final by = '${r['created_by'] ?? ''}'.trim();
+    t = 'مرحباً ${r['name']} 👋\nطلب الصيانة رقم ${r['code']}\nالحالة: ${r['status_label']}${note.isNotEmpty ? '\n$note' : ''}${by.isNotEmpty && by != 'برنامج الصيانة' ? '\nاستلمها الموظف: $by' : ''}\nكوفيكس سوريا';
   }
+  await openWa('${r['phone']}', t);
 }
 
 Future<void> openWa(String phone, String text) =>
@@ -232,6 +223,11 @@ class ServiceApp extends StatelessWidget {
         snackBarTheme: SnackBarThemeData(backgroundColor: ink, behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
       navigatorKey: navKey,
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: child,
+      ),
       home: Api.token.isEmpty ? const LoginScreen() : const HomeScreen(),
     );
   }
@@ -562,8 +558,7 @@ class _RepairDetailState extends State<RepairDetail> {
       },
       child: Scaffold(
         appBar: AppBar(title: Text('${r['code']}', style: h(18)), backgroundColor: bg, actions: [
-          IconButton(tooltip: 'إيصال PDF', onPressed: () => sendReceipt(context, r), icon: const Icon(Icons.picture_as_pdf_rounded)),
-          IconButton(tooltip: 'صورة الحالة', onPressed: () => sendStatus(r, text: 'طلب الصيانة ${r['code']} — ${r['status_label']}'), icon: const Icon(Icons.image_rounded)),
+          IconButton(tooltip: 'إعادة إرسال الإيصال', onPressed: () => sendReceipt(context, r), icon: const Icon(Icons.receipt_long_rounded)),
         ]),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -582,7 +577,7 @@ class _RepairDetailState extends State<RepairDetail> {
               flex: 2,
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(backgroundColor: green, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                onPressed: () => openWa('${r['phone']}', 'مرحباً ${r['name']} 👋\nطلب الصيانة رقم ${r['code']}\nالحالة: ${r['status_label']}\nكوفيكس سوريا'),
+                onPressed: () => sendStatus(r),
                 icon: const Icon(Icons.chat_rounded),
                 label: Text('واتساب', style: h(15, c: Colors.white)),
               ),
@@ -1053,8 +1048,8 @@ class _DoneScreenState extends State<DoneScreen> {
                       await sendReceipt(context, r, photo: widget.photo);
                       if (mounted) setState(() => busy = false);
                     },
-              icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white)) : const Icon(Icons.picture_as_pdf_rounded),
-              label: Text(busy ? 'جاري تجهيز الإيصال…' : 'إرسال إيصال PDF للزبون على واتساب', style: h(15, c: Colors.white)),
+              icon: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white)) : const Icon(Icons.chat_rounded),
+              label: Text('إرسال الإيصال للزبون على واتساب', style: h(15, c: Colors.white)),
             ),
             const SizedBox(height: 10),
             OutlinedButton(

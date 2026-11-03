@@ -335,3 +335,25 @@ Future<int?> askQuantity(BuildContext context, int current) {
     },
   );
 }
+
+/// "Added to cart" bar with a button that opens the cart.
+void cartToast(BuildContext context, String msg, VoidCallback openCart) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      duration: const Duration(seconds: 4),
+      content: Row(children: [
+        Icon(Icons.shopping_bag_rounded, color: C.accent2, size: 20),
+        const SizedBox(width: 10),
+        Expanded(child: Text(msg)),
+        TextButton(
+          style: TextButton.styleFrom(backgroundColor: C.accent, foregroundColor: C.ink, padding: const EdgeInsets.symmetric(horizontal: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            openCart();
+          },
+          child: Text('عرض السلة', style: T.h(13, c: C.ink)),
+        ),
+      ]),
+    ));
+}

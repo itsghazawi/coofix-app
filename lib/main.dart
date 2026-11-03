@@ -33,6 +33,11 @@ class CoofixApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       home: const SplashScreen(),
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: child,
+      ),
     ),
     );
   }

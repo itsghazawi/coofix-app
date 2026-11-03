@@ -377,8 +377,15 @@ function cfx_repair_box_notify($post) {
     echo '<a class="button button-primary" target="_blank" rel="noopener" href="' . esc_url('https://wa.me/' . $num . '?text=' . rawurlencode($msg)) . '">إرسال عبر واتساب</a>';
 }
 
-function cfx_repair_fill($tpl, $d, $note = '') {
+function cfx_repair_fill($tpl, $d, $note = '', $staff = null) {
+    $recv = ($d['created_by'] && $d['created_by'] !== 'برنامج الصيانة') ? $d['created_by'] : '';
+    $staff = $staff === null ? $recv : $staff;
+    // Templates saved before {staff} existed: add the employee line automatically.
+    if ($staff !== '' && strpos($tpl, '{staff}') === false) {
+        $tpl = rtrim($tpl) . "\nاستلمها الموظف: {staff}";
+    }
     return trim(strtr($tpl, array(
+        '{staff}'   => $staff,
         '{name}'    => $d['name'],
         '{code}'    => $d['code'],
         '{status}'  => cfx_repair_status_label($d['status']),
@@ -500,9 +507,9 @@ function cfx_repair_settings_page() {
                 <tr><th>الرقم التالي</th><td><input type="number" name="next" min="1" value="<?php echo esc_attr($s['next']); ?>"></td></tr>
                 <tr><th>العملة</th><td><input type="text" name="currency" value="<?php echo esc_attr($s['currency']); ?>"></td></tr>
                 <tr><th>رسالة الاستلام (برنامج الموظف)</th><td><textarea name="receipt_tpl" rows="5" class="large-text"><?php echo esc_textarea($s['receipt_tpl']); ?></textarea>
-                    <p class="description">المتغيرات: {name} {code} {product} {date} {pickup} {status}</p></td></tr>
+                    <p class="description">المتغيرات: {name} {code} {product} {date} {pickup} {status} {staff} (اسم الموظف)</p></td></tr>
                 <tr><th>رسالة التحديث (واتساب)</th><td><textarea name="notify_tpl" rows="5" class="large-text"><?php echo esc_textarea($s['notify_tpl']); ?></textarea>
-                    <p class="description">المتغيرات: {name} {code} {status} {note} {cost} {date} {product}</p></td></tr>
+                    <p class="description">المتغيرات: {name} {code} {status} {note} {cost} {date} {product} {staff} (اسم الموظف)</p></td></tr>
                 <tr><th>دخول الموظفين</th><td><p style="margin-top:0">برنامج الصيانة مقفول بتسجيل دخول. أضف الموظفين وكلمات مرورهم من صفحة <a href="<?php echo esc_url(admin_url('edit.php?post_type=cfx_repair&page=coofix-staff')); ?>"><strong>الموظفون</strong></a>.</p>
                     <label><input type="checkbox" name="allow_key" value="1" <?php checked(!empty($s['allow_key'])); ?>> السماح بالمفتاح القديم المشترك (غير مستحسن — للنسخ القديمة من البرنامج فقط)</label></td></tr>
             </table>

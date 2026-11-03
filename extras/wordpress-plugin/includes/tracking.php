@@ -106,7 +106,7 @@ function cfx_tracking_shortcode($atts) {
     var x=r.status==='cancelled';
     var h='<div class="cfxt-card"><div class="cfxt-card-h"><div><small>طلب رقم</small><b dir="ltr">'+esc(r.code)+'</b></div><span class="cfxt-badge'+(x?' is-x':'')+'">'+esc(r.status_label||'')+'</span></div>';
     if(!x&&idx>=0){h+='<ul class="cfxt-steps">';steps.forEach(function(s,i){h+='<li class="'+(i<=idx?'done':'')+(i===idx?' cur':'')+'"><span class="cfxt-dot">'+(i<=idx?'✓':(i+1))+'</span><span>'+s[1]+'</span></li>';});h+='</ul>';}
-    var rows=[['العدّة',r.device],['الرقم التسلسلي',r.serial],['تاريخ الاستلام',r.received_at],['موعد الصيانة',r.service_at],['التسليم ابتداءً من',r.expected_at],['التكلفة',r.cost],['ضمن الكفالة',r.warranty===true?'نعم':(r.warranty===false?'لا':'')]];
+    var rows=[['العدّة',r.device],['الرقم التسلسلي',r.serial],['تاريخ الاستلام',r.received_at],['موعد الصيانة',r.service_at],['التسليم ابتداءً من',r.expected_at],['التكلفة',r.cost],['ضمن الكفالة',r.warranty===true?'نعم':(r.warranty===false?'لا':'')],['استلمها الموظف',r.received_by||'']];
     h+='<div class="cfxt-rows">';rows.forEach(function(w){if(w[1])h+='<div class="cfxt-row"><span>'+w[0]+'</span><b>'+esc(w[1])+'</b></div>';});h+='</div>';
     if(r.work_done)h+='<div class="cfxt-box"><small>ما تم في الصيانة</small>'+esc(r.work_done)+'</div>';
     var log=(r.timeline||[]).filter(function(t){return t&&t.note;}).reverse();

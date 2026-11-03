@@ -96,7 +96,7 @@ String orderMessage(List<MapEntry<Product, int>> items, num total, Price? fmt, {
     b.writeln('\n${cfg.s('order.total_label', 'الإجمالي التقريبي')}: ${fmt.fmt(total)}');
   }
   if (name != null && name.isNotEmpty) b.writeln('الاسم: $name');
-  if (city != null && city.isNotEmpty) b.writeln('المدينة: $city');
+  if (city != null && city.isNotEmpty) b.writeln('العنوان: $city');
   if (phone != null && phone.isNotEmpty) b.writeln('الهاتف: $phone');
   if (note != null && note.isNotEmpty) b.writeln('ملاحظات: $note');
   final footer = cfg.s('order.footer', 'شكراً لكم.');

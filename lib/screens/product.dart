@@ -9,6 +9,7 @@ import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/extras.dart';
 import '../widgets/ui.dart';
+import 'shell.dart';
 
 class ProductScreen extends StatefulWidget {
   final Product p;
@@ -210,7 +211,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       return;
                     }
                     Store.i.add(p, qty);
-                    toast(context, 'تمت إضافة $qty إلى السلة', icon: Icons.shopping_bag_rounded);
+                    cartToast(context, 'تمت إضافة $qty إلى السلة', () => openCartTab(context));
                   },
                   child: Container(
                     height: 56,

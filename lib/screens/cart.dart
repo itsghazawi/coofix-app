@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../data/api.dart';
-import '../data/docs.dart';
-import '../widgets/invoice.dart';
 
 import '../data/config.dart';
 import '../data/store.dart';
@@ -194,9 +192,9 @@ class _CheckoutState extends State<_Checkout> {
   void _order() {
     final cfg = Cfg.i;
     final name = TextEditingController();
-    final city = TextEditingController();
+    final area = TextEditingController();
     final phone = TextEditingController();
-    final note = TextEditingController();
+    String? gov;
     final code = TextEditingController();
     String? error, codeMsg;
     CouponResult? coupon;
@@ -231,9 +229,10 @@ class _CheckoutState extends State<_Checkout> {
 
           Future<void> send() async {
             String? miss;
-            if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = 'الاسم';
-            if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = 'المدينة';
-            if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
+            if (gov == null) miss = 'المحافظة';
+            if (miss == null && area.text.trim().isEmpty) miss = 'المنطقة';
+            if (miss == null && name.text.trim().isEmpty) miss = 'الاسم الثلاثي';
+            if (miss == null && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
             if (miss != null) {
               setSheet(() => error = 'الرجاء تعبئة $miss');
               return;
@@ -245,37 +244,13 @@ class _CheckoutState extends State<_Checkout> {
             final items = Store.i.items;
             final now = DateTime.now();
             final number = 'ORD-${now.year % 100}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
-            var text = orderMessage(items, Store.i.total, fmt, name: name.text.trim(), city: city.text.trim(), phone: phone.text.trim(), note: note.text.trim());
+            var text = orderMessage(items, Store.i.total, fmt, name: name.text.trim(), city: '$gov — ${area.text.trim()}', phone: phone.text.trim());
             if (coupon != null) {
               text += '\n\nكود الحسم: ${coupon!.code} (${coupon!.label})\nالحسم: ${fmt.fmt(coupon!.discount)}\nالإجمالي بعد الحسم: ${fmt.fmt(Store.i.total - coupon!.discount)}';
               unawaited(checkCoupon(coupon!.code, use: true));
             }
             text = 'رقم الطلب: $number\n$text';
-            try {
-              if (!cfg.b('order.pdf', true)) throw 'text';
-              final png = await Docs.png(
-                InvoiceDoc(
-                  number: number,
-                  date: now,
-                  items: items,
-                  fmt: fmt,
-                  subtotal: Store.i.total,
-                  discount: coupon?.discount ?? 0,
-                  couponCode: coupon?.code ?? '',
-                  couponLabel: coupon?.label ?? '',
-                  name: name.text.trim(),
-                  city: city.text.trim(),
-                  phone: phone.text.trim(),
-                  note: note.text.trim(),
-                  hidePrices: hide,
-                ),
-                const Size(794, 1123),
-              );
-              final pdf = await Docs.pdfFromPng(png);
-              await Docs.sendToWhatsApp(pdf, 'Coofix-$number.pdf', mime: 'application/pdf', phone: Config.whatsapp, text: text);
-            } catch (_) {
-              await openWhatsApp(text);
-            }
+            await openWhatsApp(text);
             if (c.mounted) Navigator.pop(c);
           }
 
@@ -286,6 +261,7 @@ class _CheckoutState extends State<_Checkout> {
               padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
               decoration: BoxDecoration(color: C.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
               child: SingleChildScrollView(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
                   const SizedBox(height: 18),
@@ -293,22 +269,32 @@ class _CheckoutState extends State<_Checkout> {
                   const SizedBox(height: 4),
                   Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
                   const SizedBox(height: 18),
-                  if (cfg.b('order.ask_name', true)) ...[
-                    Field(ctrl: name, label: cfg.b('order.require_name') ? 'الاسم الكامل *' : 'الاسم الكامل', icon: Icons.person_rounded),
-                    const SizedBox(height: 12),
-                  ],
-                  if (cfg.b('order.ask_city', true)) ...[
-                    Field(ctrl: city, label: cfg.b('order.require_city') ? 'المدينة / المنطقة *' : 'المدينة / المنطقة', icon: Icons.location_on_rounded),
-                    const SizedBox(height: 12),
-                  ],
-                  if (cfg.b('order.ask_phone')) ...[
-                    Field(ctrl: phone, label: cfg.b('order.require_phone') ? 'رقم الهاتف *' : 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
-                    const SizedBox(height: 12),
-                  ],
-                  if (cfg.b('order.ask_note', true)) ...[
-                    Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
-                    const SizedBox(height: 12),
-                  ],
+                  Text('معلومات الشحن', style: T.h(15)),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<String>(
+                    initialValue: gov,
+                    isExpanded: true,
+                    hint: Text('المحافظة *', style: T.b(14.5, c: C.muted)),
+                    items: [for (final g in const ['دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس', 'إدلب', 'درعا', 'السويداء', 'القنيطرة', 'دير الزور', 'الرقة', 'الحسكة']) DropdownMenuItem(value: g, child: Text(g, style: T.b(15, w: FontWeight.w500)))],
+                    onChanged: (v) => setSheet(() => gov = v),
+                    borderRadius: BorderRadius.circular(16),
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.map_rounded, color: C.muted),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.line)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.line)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: C.accent, width: 1.5)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Field(ctrl: area, label: 'المنطقة *', icon: Icons.location_on_rounded, action: TextInputAction.next),
+                  const SizedBox(height: 12),
+                  Field(ctrl: name, label: 'الاسم الثلاثي *', icon: Icons.person_rounded, action: TextInputAction.next),
+                  const SizedBox(height: 12),
+                  Field(ctrl: phone, label: 'رقم الهاتف *', icon: Icons.phone_rounded, type: TextInputType.phone, action: TextInputAction.done, ltr: true),
+                  const SizedBox(height: 12),
                   if (cfg.b('order.coupons', true) && !hide) ...[
                     Row(children: [
                       Expanded(child: Field(ctrl: code, label: 'كود الحسم (إن وجد)', icon: Icons.local_offer_rounded)),
@@ -378,7 +364,7 @@ class _CheckoutState extends State<_Checkout> {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Text(error!, style: T.b(13, c: const Color(0xFFD64545), w: FontWeight.w600)),
                     ),
-                  WhatsAppButton(label: sending ? 'جاري تجهيز الفاتورة…' : 'أرسل الطلب عبر واتساب', onTap: sending ? () {} : send),
+                  WhatsAppButton(label: 'أرسل الطلب عبر واتساب', onTap: sending ? () {} : send),
                 ]),
               ),
             ),
@@ -396,7 +382,7 @@ class _CheckoutState extends State<_Checkout> {
     final showTotal = cfg.b('order.show_total', true) && !cfg.b('products.hide_prices') && Store.i.total > 0;
     // Docked right above the bottom navigation bar.
     return Container(
-      margin: EdgeInsets.fromLTRB(16, 8, 16, (bottom > 0 ? bottom : 14) + 68 + 10),
+      margin: EdgeInsets.fromLTRB(16, 8, 16, (bottom > 0 ? bottom : 14) + 18),
       padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
       decoration: BoxDecoration(
         gradient: C.inkGrad,
@@ -458,12 +444,18 @@ class Field extends StatelessWidget {
   final IconData icon;
   final int lines;
   final TextInputType? type;
-  const Field({super.key, required this.ctrl, required this.label, required this.icon, this.lines = 1, this.type});
+  final TextInputAction? action;
+  final bool ltr;
+  const Field({super.key, required this.ctrl, required this.label, required this.icon, this.lines = 1, this.type, this.action, this.ltr = false});
   @override
   Widget build(BuildContext context) => TextField(
         controller: ctrl,
         maxLines: lines,
         keyboardType: type,
+        textInputAction: action ?? TextInputAction.done,
+        textDirection: ltr ? TextDirection.ltr : null,
+        onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+        onSubmitted: (_) => action == TextInputAction.next ? FocusScope.of(context).nextFocus() : FocusManager.instance.primaryFocus?.unfocus(),
         style: T.b(15, w: FontWeight.w500),
         decoration: InputDecoration(
           hintText: label,
