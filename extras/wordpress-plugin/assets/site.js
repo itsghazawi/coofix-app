@@ -76,3 +76,23 @@
   var w = document.querySelector('.single-product .product-entry-wrapper');
   if (t && w) { w.appendChild(t); t.classList.add('cfx-in-wrap'); }
 })();
+
+/* "CODE | name" titles → code chip + name (clean RTL alignment, like the app) */
+(function () {
+  var sel = '.woocommerce-loop-product__title a, .product_title, .cfx-card-title';
+  document.querySelectorAll(sel).forEach(function (el) {
+    if (el.dataset.cfxSplit) return;
+    var t = (el.textContent || '').trim(), m = t.match(/^\s*([A-Za-z0-9][A-Za-z0-9\-_.\/ ]{1,24}?)\s*[|｜]\s*(.+)$/);
+    if (!m) return;
+    el.dataset.cfxSplit = '1';
+    el.textContent = '';
+    var c = document.createElement('small'); c.className = 'cfx-code'; c.dir = 'ltr'; c.textContent = m[1].trim();
+    var n = document.createElement('span'); n.className = 'cfx-name'; n.textContent = m[2].trim();
+    if (el.classList.contains('product_title')) {
+      var row = document.createElement('span'); row.className = 'cfx-code-row';
+      var l = document.createElement('span'); l.className = 'cfx-code-l'; l.textContent = 'كود المنتج';
+      row.appendChild(l); row.appendChild(c); el.appendChild(row);
+    } else { el.appendChild(c); }
+    el.appendChild(n);
+  });
+})();
