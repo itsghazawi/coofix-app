@@ -102,13 +102,14 @@ class Api {
 
   static Future<void> _check(http.Response r) async {
     if (r.statusCode == 401 || r.statusCode == 403) {
+      final had = token.isNotEmpty;
       await clearSession();
-      throw SessionExpired(_msg(r, 'انتهت الجلسة، سجّل الدخول من جديد'));
+      throw SessionExpired(had ? _msg(r, 'انتهت الجلسة، سجّل الدخول من جديد') : '');
     }
   }
 
   static Future<Map<String, dynamic>> info() async {
-    final r = await http.get(u('/staff/info'), headers: headers).timeout(const Duration(seconds: 15));
+    final r = await http.get(u('/staff/info', {'_': '${DateTime.now().millisecondsSinceEpoch}'}), headers: headers).timeout(const Duration(seconds: 15));
     await _check(r);
     if (r.statusCode == 404) throw 'إضافة كوفيكس غير مثبتة أو غير محدّثة على الموقع';
     if (r.statusCode != 200) throw 'خطأ في الاتصال (${r.statusCode})';
@@ -119,13 +120,20 @@ class Api {
 
   static Future<List<Map<String, dynamic>>> list({String q = '', String state = 'all'}) async {
     final r = await http
-        .get(u('/staff/repairs', {if (q.isNotEmpty) 'q': q, if (state != 'all') 'state': state}), headers: headers)
+        .get(u('/staff/repairs', {if (q.isNotEmpty) 'q': q, 'state': state, '_': '${DateTime.now().millisecondsSinceEpoch}'}), headers: headers)
         .timeout(const Duration(seconds: 20));
     await _check(r);
     if (r.statusCode != 200) throw 'تعذّر تحميل الطلبات (${r.statusCode})';
     final j = jsonDecode(utf8.decode(r.bodyBytes));
     counts = j['counts'] is Map ? (j['counts'] as Map).cast<String, dynamic>() : {};
     return (j['items'] as List).map((e) => (e as Map).cast<String, dynamic>()).toList();
+  }
+
+  static Future<Map<String, dynamic>> update(int id, Map<String, String> fields) async {
+    final r = await http.post(u('/staff/repairs/$id'), headers: headers, body: fields).timeout(const Duration(seconds: 20));
+    await _check(r);
+    if (r.statusCode != 200) throw _msg(r, 'تعذّر الحفظ (${r.statusCode})');
+    return (jsonDecode(utf8.decode(r.bodyBytes)) as Map).cast<String, dynamic>();
   }
 
   static Future<Map<String, dynamic>> create(Map<String, String> fields, List<File> photos, File? warrantyPhoto) async {
@@ -205,7 +213,7 @@ class ServiceApp extends StatelessWidget {
 
 /// Back to the login screen (session expired / logged out).
 void goLogin([String? msg]) {
-  navKey.currentState?.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginScreen(message: msg)), (_) => false);
+  navKey.currentState?.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => LoginScreen(message: (msg ?? '').isEmpty ? null : msg)), (_) => false);
 }
 
 void snack(BuildContext c, String m) => ScaffoldMessenger.of(c)
@@ -225,7 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? error;
   bool loading = true;
   final search = TextEditingController();
-  String state = 'open';
+  String state = 'all';
+  int _seq = 0;
 
   @override
   void initState() {
@@ -238,8 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
       loading = true;
       error = null;
     });
+    final my = ++_seq;
     try {
       final r = await Future.wait([Api.info(), Api.list(q: search.text.trim(), state: state)]);
+      if (my != _seq) return; // a newer filter/search started meanwhile
       info = r[0] as Map<String, dynamic>;
       items = r[1] as List<Map<String, dynamic>>;
     } on SessionExpired catch (e) {
@@ -376,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 sliver: SliverList.separated(
                   itemCount: items.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (c, i) => _RepairTile(items[i]),
+                  itemBuilder: (c, i) => _RepairTile(items[i], onChanged: _load),
                 ),
               ),
           ],
@@ -431,13 +442,17 @@ class _FilterChip extends StatelessWidget {
 
 class _RepairTile extends StatelessWidget {
   final Map<String, dynamic> r;
-  const _RepairTile(this.r);
+  final VoidCallback? onChanged;
+  const _RepairTile(this.r, {this.onChanged});
   @override
   Widget build(BuildContext context) {
     final st = '${r['status']}';
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => RepairDetail(r))),
+      onTap: () async {
+        final ch = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => RepairDetail(r)));
+        if (ch == true) onChanged?.call();
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: line)),
@@ -472,14 +487,40 @@ class _RepairTile extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------- detail
-class RepairDetail extends StatelessWidget {
+class RepairDetail extends StatefulWidget {
   final Map<String, dynamic> r;
   const RepairDetail(this.r, {super.key});
+  @override
+  State<RepairDetail> createState() => _RepairDetailState();
+}
+
+class _RepairDetailState extends State<RepairDetail> {
+  late Map<String, dynamic> r = widget.r;
+  bool changed = false;
+
+  Future<void> _update() async {
+    final res = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _StatusSheet(r),
+    );
+    if (res == null || !mounted) return;
+    setState(() {
+      r = res;
+      changed = true;
+    });
+    final txt = '${res['notify_text'] ?? ''}';
+    if (res['_notify'] == true && txt.isNotEmpty) await openWa('${r['phone']}', txt);
+    if (mounted) snack(context, 'تم تحديث الطلب ✓');
+  }
+
   @override
   Widget build(BuildContext context) {
     final photos = (r['photo_urls'] as List? ?? []).map((e) => '$e').toList();
     final tl = (r['timeline'] as List? ?? []).whereType<Map>().toList().reversed.toList();
-    Widget row(String k, String v) => v.isEmpty
+    final st = '${r['status']}';
+    Widget row(String k, String v) => v.trim().isEmpty
         ? const SizedBox.shrink()
         : Padding(
             padding: const EdgeInsets.symmetric(vertical: 7),
@@ -488,63 +529,212 @@ class RepairDetail extends StatelessWidget {
               Expanded(child: Text(v, style: b(14, w: FontWeight.w600))),
             ]),
           );
-    return Scaffold(
-      appBar: AppBar(title: Text('${r['code']}', style: h(18)), backgroundColor: bg),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: line)),
-          child: Column(children: [
-            row('الحالة', '${r['status_label']}'),
-            row('الزبون', '${r['name']}'),
-            row('الهاتف', '${r['phone']}'),
-            row('كود المنتج', '${r['product_code'] ?? ''}'),
-            row('الرقم التسلسلي', '${r['serial'] ?? ''}'),
-            row('الملحقات', r['accessories'] == true ? 'نعم ${r['accessories_text'] ?? ''}' : 'لا'),
-            row('الكفالة', r['warranty'] == true ? 'ضمن الكفالة' : 'خارج الكفالة'),
-            row('تاريخ الشراء', '${r['purchase_date'] ?? ''}'),
-            row('موعد الصيانة', '${r['scheduled_label'] ?? ''}'),
-            row('التسليم', '${r['pickup_label'] ?? ''}'),
-            row('التكلفة', '${r['cost'] ?? ''}'),
-            row('ما تم', '${r['work_done'] ?? ''}'),
-            row('الوصف', '${r['description'] ?? ''}'),
-            row('الاستلام', '${r['created_label'] ?? ''} ${r['created_by'] ?? ''}'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.of(context).pop(changed);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('${r['code']}', style: h(18)), backgroundColor: bg),
+        bottomNavigationBar: SafeArea(
+          minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(children: [
+            Expanded(
+              flex: 3,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: ink, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                onPressed: _update,
+                icon: const Icon(Icons.edit_note_rounded, color: amber),
+                label: Text('تحديث الحالة', style: h(15, c: Colors.white)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: green, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                onPressed: () => openWa('${r['phone']}', 'مرحباً ${r['name']} 👋\nطلب الصيانة رقم ${r['code']}\nالحالة: ${r['status_label']}\nكوفيكس سوريا'),
+                icon: const Icon(Icons.chat_rounded),
+                label: Text('واتساب', style: h(15, c: Colors.white)),
+              ),
+            ),
           ]),
         ),
-        if (photos.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: photos.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(photos[i], width: 110, height: 110, fit: BoxFit.cover)),
-            ),
+        body: ListView(padding: const EdgeInsets.all(16), children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(gradient: inkGrad, borderRadius: BorderRadius.circular(22)),
+            child: Row(children: [
+              Container(
+                width: 46, height: 46,
+                decoration: BoxDecoration(color: statusColor(st).withValues(alpha: 0.2), borderRadius: BorderRadius.circular(14)),
+                child: Icon(st == 'delivered' ? Icons.task_alt_rounded : st == 'ready' ? Icons.inventory_2_rounded : Icons.build_circle_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${r['status_label']}', style: h(17, c: Colors.white)),
+                Text('${r['name']} • ${r['phone']}', style: b(13, c: Colors.white.withValues(alpha: 0.6))),
+              ])),
+            ]),
           ),
-        ],
-        if (tl.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text('سجل التتبع', style: h(16)),
-          const SizedBox(height: 8),
-          for (final t in tl)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(radius: 6, backgroundColor: statusColor('${t['status']}')),
-              title: Text(statusLabel('${t['status']}'), style: b(14, w: FontWeight.w700)),
-              subtitle: Text('${t['note'] ?? ''}', style: b(13, c: muted)),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: line)),
+            child: Column(children: [
+              row('كود المنتج', '${r['product_code'] ?? ''}'),
+              row('الرقم التسلسلي', '${r['serial'] ?? ''}'),
+              row('الملحقات', r['accessories'] == true ? 'نعم ${r['accessories_text'] ?? ''}' : 'لا'),
+              row('الكفالة', r['warranty'] == true ? 'ضمن الكفالة' : 'خارج الكفالة'),
+              row('تاريخ الشراء', '${r['purchase_date'] ?? ''}'),
+              row('موعد الصيانة', '${r['scheduled_label'] ?? ''}'),
+              row('التسليم', '${r['pickup_label'] ?? ''}'),
+              row('التكلفة', '${r['cost'] ?? ''}'),
+              row('ما تم', '${r['work_done'] ?? ''}'),
+              row('الوصف', '${r['description'] ?? ''}'),
+              row('الاستلام', '${r['created_label'] ?? ''} ${r['created_by'] ?? ''}'),
+            ]),
+          ),
+          if (photos.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 110,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: photos.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () => showDialog(context: context, builder: (_) => Dialog(insetPadding: const EdgeInsets.all(12), child: InteractiveViewer(child: Image.network(photos[i])))),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(photos[i], width: 110, height: 110, fit: BoxFit.cover)),
+                ),
+              ),
             ),
-        ],
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          style: FilledButton.styleFrom(backgroundColor: green, minimumSize: const Size.fromHeight(52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-          onPressed: () => openWa('${r['phone']}', 'مرحباً ${r['name']} 👋\nطلب الصيانة رقم ${r['code']}\nالحالة: ${r['status_label']}\nكوفيكس سوريا'),
-          icon: const Icon(Icons.chat_rounded),
-          label: Text('مراسلة الزبون', style: h(15, c: Colors.white)),
+          ],
+          if (tl.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text('سجل التتبع', style: h(16)),
+            const SizedBox(height: 8),
+            for (final t in tl)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(radius: 6, backgroundColor: statusColor('${t['status']}')),
+                title: Text(statusLabel('${t['status']}'), style: b(14, w: FontWeight.w700)),
+                subtitle: Text([if ('${t['note'] ?? ''}'.isNotEmpty) '${t['note']}', if ('${t['by'] ?? ''}'.isNotEmpty) '— ${t['by']}'].join('\n'), style: b(13, c: muted)),
+                trailing: t['public'] == false ? const Icon(Icons.lock_rounded, size: 16, color: muted) : null,
+              ),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+class _StatusSheet extends StatefulWidget {
+  final Map<String, dynamic> r;
+  const _StatusSheet(this.r);
+  @override
+  State<_StatusSheet> createState() => _StatusSheetState();
+}
+
+class _StatusSheetState extends State<_StatusSheet> {
+  late String status = '${widget.r['status']}';
+  final note = TextEditingController();
+  late final cost = TextEditingController(text: '${widget.r['cost'] ?? ''}');
+  late final work = TextEditingController(text: '${widget.r['work_done'] ?? ''}');
+  bool public = true, notify = true, saving = false;
+
+  Future<void> _save() async {
+    setState(() => saving = true);
+    try {
+      final res = await Api.update((widget.r['id'] as num).toInt(), {
+        'status': status,
+        'note': note.text.trim(),
+        'public': public ? '1' : '0',
+        'cost': cost.text.trim(),
+        'work_done': work.text.trim(),
+      });
+      res['_notify'] = notify;
+      if (mounted) Navigator.pop(context, res);
+      return;
+    } on SessionExpired catch (e) {
+      goLogin(e.msg);
+      return;
+    } catch (e) {
+      if (mounted) snack(context, e is String ? e : 'تعذّر الحفظ، تحقق من الإنترنت');
+    }
+    if (mounted) setState(() => saving = false);
+  }
+
+  InputDecoration _dec(String l, IconData i) => InputDecoration(
+        labelText: l,
+        prefixIcon: Icon(i, size: 20),
+        filled: true,
+        fillColor: bg,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    const keys = ['received', 'diagnosing', 'waiting_parts', 'repairing', 'ready', 'delivered', 'cancelled'];
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Container(
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: line, borderRadius: BorderRadius.circular(4)))),
+              const SizedBox(height: 14),
+              Text('تحديث الطلب ${widget.r['code']}', style: h(18)),
+              const SizedBox(height: 14),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                for (final k in keys)
+                  ChoiceChip(
+                    label: Text(statusLabel(k)),
+                    selected: status == k,
+                    onSelected: (_) => setState(() => status = k),
+                    selectedColor: statusColor(k),
+                    labelStyle: b(13.5, w: FontWeight.w600, c: status == k ? Colors.white : textC),
+                    side: BorderSide(color: status == k ? statusColor(k) : line),
+                    showCheckmark: false,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+              ]),
+              const SizedBox(height: 14),
+              TextField(controller: note, maxLines: 2, decoration: _dec('ملاحظة (مثلاً: تم تغيير قلب ساعة الراحة)', Icons.sticky_note_2_rounded)),
+              const SizedBox(height: 10),
+              Row(children: [
+                Expanded(child: TextField(controller: cost, keyboardType: TextInputType.number, decoration: _dec('التكلفة', Icons.payments_rounded))),
+              ]),
+              const SizedBox(height: 10),
+              TextField(controller: work, maxLines: 2, decoration: _dec('ما تم إنجازه', Icons.build_rounded)),
+              const SizedBox(height: 6),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: public,
+                onChanged: (v) => setState(() => public = v),
+                title: Text('الملاحظة تظهر للزبون', style: b(14, w: FontWeight.w600)),
+                activeThumbColor: amberDeep,
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: notify,
+                onChanged: (v) => setState(() => notify = v),
+                title: Text('إرسال التحديث للزبون على واتساب', style: b(14, w: FontWeight.w600)),
+                activeThumbColor: green,
+              ),
+              const SizedBox(height: 8),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: ink, minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                onPressed: saving ? null : _save,
+                child: saving ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white)) : Text('حفظ', style: h(16, c: Colors.white)),
+              ),
+            ]),
+          ),
         ),
-        const SizedBox(height: 8),
-        Text('تعديل الحالة والتكلفة يتم من لوحة ووردبريس ← الصيانة.', textAlign: TextAlign.center, style: b(12, c: muted)),
-      ]),
+      ),
     );
   }
 }
@@ -1005,12 +1195,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             bottom: -140, left: -120,
             child: Container(width: 340, height: 340, decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [amber.withValues(alpha: 0.10), amber.withValues(alpha: 0)]))),
           ),
-          SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(24, pad.top + 48, 24, pad.bottom + 24),
-            child: Center(
+          LayoutBuilder(builder: (context, box) => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, pad.top + 24, 24, pad.bottom + 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight - pad.top - pad.bottom - 48),
+              child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Column(children: [
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
                   AnimatedBuilder(
                     animation: glow,
                     builder: (_, child) => Container(
@@ -1128,7 +1320,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ]),
               ),
             ),
-          ),
+            ),
+          )),
         ]),
       ),
     );

@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Version of this build — compared against the panel's update settings.
-const kAppVersion = '1.2.1';
+const kAppVersion = '1.3.0';
 
 /// Remote app configuration managed from the WordPress "coofix-app" plugin
 /// (GET /wp-json/coofix-app/v1/config). Bundled defaults are used until the

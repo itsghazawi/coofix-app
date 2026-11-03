@@ -5,6 +5,7 @@ import '../data/models.dart';
 import '../data/store.dart';
 import '../screens/product.dart';
 import '../theme.dart';
+import 'extras.dart';
 import 'ui.dart';
 
 void openProduct(BuildContext context, Product p, {String tag = 'feat'}) {
@@ -57,7 +58,10 @@ class ProductCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(p.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(11.5, c: C.muted, w: FontWeight.w500)),
+                  Row(children: [
+                    Expanded(child: Text(p.categoryName, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(11.5, c: C.muted, w: FontWeight.w500))),
+                    if (p.sku.isNotEmpty) SkuChip(p.sku),
+                  ]),
                   const SizedBox(height: 2),
                   SizedBox(
                     height: 42,

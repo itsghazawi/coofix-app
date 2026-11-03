@@ -12,6 +12,7 @@ import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/actions.dart';
 import '../widgets/brand.dart';
+import '../widgets/extras.dart';
 import '../widgets/notices.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
@@ -83,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'تابع حالة عدّتك برقم الطلب أو الهاتف')));
       }
     }
+    slivers.add(const SliverToBoxAdapter(child: AppFooter()));
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
 
     return RefreshIndicator(

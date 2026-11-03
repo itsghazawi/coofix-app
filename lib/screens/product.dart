@@ -7,6 +7,7 @@ import '../data/models.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
+import '../widgets/extras.dart';
 import '../widgets/ui.dart';
 
 class ProductScreen extends StatefulWidget {
@@ -99,11 +100,11 @@ class _ProductScreenState extends State<ProductScreen> {
                         ]),
                       ]),
                       const SizedBox(height: 14),
-                      Text(p.name, style: T.h(23, height: 1.4)),
                       if (p.sku.isNotEmpty && Cfg.i.b('products.show_sku', true)) ...[
-                        const SizedBox(height: 6),
-                        Text('رمز المنتج: ${p.sku}', style: T.b(12.5, c: C.muted)),
+                        Align(alignment: AlignmentDirectional.centerStart, child: SkuTag(p.sku)),
+                        const SizedBox(height: 12),
                       ],
+                      Text(p.name, style: T.h(23, height: 1.4)),
                       const SizedBox(height: 16),
                       PriceView(p.price, size: 24, color: C.ink),
                       const SizedBox(height: 22),

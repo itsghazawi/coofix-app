@@ -433,3 +433,58 @@ add_filter('gettext', function ($t, $text, $domain) {
     }
     return $t;
 }, 10, 3);
+
+/* ------------------------------------------------------------------ */
+/* REST: update a repair from the staff app (status / note / cost)     */
+/* ------------------------------------------------------------------ */
+add_action('rest_api_init', function () {
+    register_rest_route('coofix-app/v1', '/staff/repairs/(?P<id>\d+)', array(
+        'methods'             => 'POST',
+        'permission_callback' => 'cfx_staff_auth',
+        'callback'            => function (WP_REST_Request $r) {
+            $id = intval($r['id']);
+            if (get_post_type($id) !== 'cfx_repair') {
+                return new WP_Error('cfx_404', 'الطلب غير موجود', array('status' => 404));
+            }
+            $d = cfx_repair_get($id);
+            $me = cfx_current_staff();
+            $by = $me ? $me->display_name : 'برنامج الصيانة';
+            $status = sanitize_key((string) $r->get_param('status'));
+            $note = sanitize_textarea_field((string) $r->get_param('note'));
+            $public = $r->get_param('public') === null ? true : !in_array((string) $r->get_param('public'), array('0', 'false', ''), true);
+            $changed = false;
+            if ($status !== '' && array_key_exists($status, cfx_repair_statuses()) && ($status !== $d['status'] || $note !== '')) {
+                $d['status'] = $status;
+                $d['timeline'][] = array('time' => time(), 'status' => $status, 'note' => $note, 'public' => $public, 'by' => $by);
+                $changed = true;
+            } elseif ($note !== '') {
+                $d['timeline'][] = array('time' => time(), 'status' => $d['status'], 'note' => $note, 'public' => $public, 'by' => $by);
+                $changed = true;
+            }
+            if ($r->get_param('cost') !== null) {
+                $d['cost'] = sanitize_text_field((string) $r->get_param('cost'));
+                $changed = true;
+            }
+            if ($r->get_param('work_done') !== null) {
+                $d['work_done'] = sanitize_textarea_field((string) $r->get_param('work_done'));
+                $changed = true;
+            }
+            if ($changed) {
+                cfx_repair_save($id, $d);
+            }
+            $out = cfx_repair_staff($id);
+            $out['notify_text'] = cfx_repair_fill(cfx_repair_settings()['notify_tpl'], cfx_repair_get($id), $public ? $note : '');
+            return $out;
+        },
+    ));
+});
+
+// Staff endpoints must never be cached (LiteSpeed / proxies).
+add_filter('rest_post_dispatch', function ($res, $server, $req) {
+    if (strpos($req->get_route(), '/coofix-app/v1/staff') === 0 && $res instanceof WP_REST_Response) {
+        $res->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $res->header('X-LiteSpeed-Cache-Control', 'no-cache');
+        do_action('litespeed_control_set_nocache', 'coofix staff api');
+    }
+    return $res;
+}, 10, 3);

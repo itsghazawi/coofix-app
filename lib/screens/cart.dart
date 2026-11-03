@@ -127,9 +127,20 @@ class _Stepper extends StatelessWidget {
           final n = await askQuantity(context, qty);
           if (n != null) onSet(n);
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-          child: Text('$qty', style: T.h(15).copyWith(decoration: TextDecoration.underline, decorationColor: C.line, decorationStyle: TextDecorationStyle.dotted)),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          constraints: const BoxConstraints(minWidth: 48),
+          padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: C.accent.withValues(alpha: 0.7), width: 1.4),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text('$qty', style: T.h(15)),
+            const SizedBox(width: 4),
+            Icon(Icons.edit_rounded, size: 12, color: C.accentDeep),
+          ]),
         ),
       ),
       b(qty == 1 ? Icons.delete_outline_rounded : Icons.remove_rounded, onMinus),
