@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+
+.cfx-wrap { --ink:#061922; --ink2:#0F3041; --amber:#FAA21B; --amber2:#FFC14F; --bg:#F4F3F0; --line:#E6E3DD; --muted:#7c828c; --ok:#1f9d55; --warn:#d97706;
+  font-family:'IBM Plex Sans Arabic', -apple-system, 'Segoe UI', Tahoma, sans-serif; margin:20px 0 0 20px; color:#15181D; }
+body.rtl .cfx-wrap { margin:20px 20px 0 20px; }
+.cfx-wrap * { box-sizing:border-box; }
+.cfx-wrap h1, .cfx-wrap h2, .cfx-wrap h4 { font-family:inherit; }
+
+/* Hero */
+.cfx-hero { display:flex; align-items:center; gap:18px; padding:22px 26px; border-radius:22px; color:#fff;
+  background:radial-gradient(120% 140% at 100% 0%, #15394A 0%, var(--ink) 60%); box-shadow:0 14px 40px rgba(6,25,34,.25); }
+.cfx-hero-mark { width:58px; height:58px; border-radius:16px; display:grid; place-items:center; background:rgba(250,162,27,.12); border:1px solid rgba(250,162,27,.35); flex:none; }
+.cfx-hero-mark svg { width:32px; height:32px; fill:var(--amber); }
+.cfx-hero-text { flex:1; min-width:0; }
+.cfx-hero h1 { color:#fff; font-size:24px; font-weight:700; margin:0 0 4px; padding:0; }
+.cfx-hero p { margin:0; color:rgba(255,255,255,.65); font-size:13.5px; }
+.cfx-hero-meta { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.cfx-hero .cfx-muted { color:rgba(255,255,255,.5); }
+.cfx-pill { padding:5px 12px; border-radius:30px; font-size:12px; font-weight:700; }
+.cfx-pill.is-ok { background:rgba(31,157,85,.18); color:#5fe39a; }
+.cfx-pill.is-warn { background:rgba(217,119,6,.2); color:#ffc067; }
+
+.cfx-notice { margin:16px 0 0; padding:12px 16px; border-radius:14px; font-weight:600; }
+.cfx-notice.is-ok { background:#e8f7ee; color:#146c3b; border:1px solid #bfe8cf; }
+.cfx-notice.is-warn { background:#fff4e5; color:#8a4b00; border:1px solid #ffd9a3; }
+
+/* Layout */
+.cfx-layout { display:flex; gap:20px; margin-top:20px; align-items:flex-start; }
+.cfx-tabs { position:sticky; top:46px; width:230px; flex:none; background:#fff; border:1px solid var(--line); border-radius:20px; padding:8px; }
+.cfx-tabs a { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:13px; color:#2b3038; text-decoration:none; font-weight:600; font-size:13.5px; transition:.15s; }
+.cfx-tabs a .dashicons { color:#9aa0a8; }
+.cfx-tabs a:hover { background:var(--bg); }
+.cfx-tabs a.is-active { background:var(--ink); color:#fff; }
+.cfx-tabs a.is-active .dashicons { color:var(--amber); }
+.cfx-tabs a:focus { box-shadow:none; }
+.cfx-main { flex:1; min-width:0; }
+.cfx-panel { display:none; }
+.cfx-panel.is-active { display:block; animation:cfxIn .25s ease; }
+@keyframes cfxIn { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none; } }
+
+/* Cards */
+.cfx-card { background:#fff; border:1px solid var(--line); border-radius:20px; margin-bottom:18px; overflow:hidden; }
+.cfx-card-head { display:flex; gap:12px; align-items:flex-start; padding:18px 22px; border-bottom:1px solid var(--line); background:linear-gradient(#fff,#fcfbf9); }
+.cfx-card-head .dashicons { width:38px; height:38px; font-size:20px; line-height:38px; text-align:center; border-radius:12px; background:rgba(250,162,27,.12); color:#c27400; flex:none; }
+.cfx-card-head h2 { margin:0; font-size:16px; font-weight:700; }
+.cfx-card-head p { margin:3px 0 0; color:var(--muted); font-size:12.5px; }
+.cfx-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px 20px; padding:20px 22px; }
+.cfx-wide { grid-column:1 / -1; }
+.cfx-sub { margin:4px 0 10px; font-size:13.5px; }
+
+/* Fields */
+.cfx-field label { display:block; font-weight:600; font-size:12.5px; margin-bottom:6px; color:#3a3f47; }
+.cfx-field input[type=text], .cfx-field input[type=url], .cfx-field input[type=number], .cfx-field select, .cfx-field textarea,
+.cfx-mini input, .cfx-mini select {
+  width:100%; max-width:none; border:1px solid #dcd8d1; border-radius:12px; padding:9px 12px; min-height:42px; font-family:inherit; font-size:14px; background:#fff; box-shadow:none; }
+.cfx-field textarea { min-height:auto; line-height:1.7; }
+.cfx-field input:focus, .cfx-field select:focus, .cfx-field textarea:focus, .cfx-mini input:focus, .cfx-mini select:focus { border-color:var(--amber); box-shadow:0 0 0 3px rgba(250,162,27,.18); outline:none; }
+.cfx-help { margin:5px 0 0; color:var(--muted); font-size:11.5px; }
+.cfx-muted { color:var(--muted); font-size:12px; }
+
+.cfx-type-toggle { display:flex; align-items:center; }
+.cfx-toggle { display:flex !important; align-items:center; gap:10px; cursor:pointer; margin:0 !important; }
+.cfx-toggle input { display:none; }
+.cfx-slider { width:44px; height:24px; border-radius:24px; background:#d9d5ce; position:relative; transition:.2s; flex:none; }
+.cfx-slider:after { content:''; position:absolute; top:3px; right:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:.2s; }
+.cfx-toggle input:checked + .cfx-slider { background:var(--amber); }
+.cfx-toggle input:checked + .cfx-slider:after { right:23px; }
+.cfx-toggle-label { font-weight:600; font-size:13px; }
+
+.cfx-media { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.cfx-media input { flex:1 1 100%; }
+.cfx-media-preview { width:100%; height:96px; border-radius:14px; border:1px dashed #d4cfc7; background:repeating-conic-gradient(#f3f1ed 0 25%, #fff 0 50%) 0 0/16px 16px; display:grid; place-items:center; overflow:hidden; }
+.cfx-media-preview img { max-width:100%; max-height:96px; object-fit:contain; }
+.cfx-media-preview span { color:var(--muted); font-size:12px; }
+
+.wp-picker-container .wp-color-result.button { border-radius:10px; min-height:38px; }
+
+/* Repeater */
+.cfx-repeater .cfx-items { display:flex; flex-direction:column; gap:10px; }
+.cfx-item { border:1px solid var(--line); border-radius:16px; background:#fcfbf9; }
+.cfx-item-head { display:flex; align-items:center; gap:10px; padding:11px 14px; }
+.cfx-item-title { flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cfx-handle { cursor:grab; color:#a3a8af; }
+.cfx-item-actions .button-link { font-size:12.5px; text-decoration:none; }
+.cfx-item-actions .cfx-remove { color:#c0392b; }
+.cfx-item-body { display:none; border-top:1px solid var(--line); background:#fff; border-radius:0 0 16px 16px; }
+.cfx-item.is-open .cfx-item-body { display:grid; }
+.cfx-fixed .cfx-item-body { display:grid; grid-template-columns:120px 1fr 1fr; }
+.cfx-fixed .cfx-item-actions { display:none; }
+.cfx-add { margin-top:12px !important; border-radius:12px !important; display:inline-flex !important; align-items:center; gap:6px; }
+.ui-sortable-helper { box-shadow:0 12px 30px rgba(0,0,0,.15); }
+.cfx-placeholder { border:2px dashed var(--amber); border-radius:16px; height:48px; background:rgba(250,162,27,.06); }
+
+/* Categories */
+.cfx-cats { display:flex; flex-direction:column; gap:8px; }
+.cfx-cat { display:grid; grid-template-columns:24px 1.3fr 1fr 1fr auto; gap:12px; align-items:end; padding:12px 14px; border:1px solid var(--line); border-radius:16px; background:#fcfbf9; }
+.cfx-cat .cfx-handle { align-self:center; }
+.cfx-cat-name { align-self:center; display:flex; flex-direction:column; }
+.cfx-cat-name span { color:var(--muted); font-size:11.5px; }
+.cfx-mini { font-size:11.5px; font-weight:600; color:#555; display:flex; flex-direction:column; gap:4px; }
+.cfx-check { align-self:center; font-weight:600; white-space:nowrap; }
+
+/* Save bar */
+.cfx-savebar { position:sticky; bottom:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:6px; padding:14px 18px; border-radius:18px;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(8px); border:1px solid var(--line); box-shadow:0 -6px 24px rgba(0,0,0,.05); }
+.cfx-savebar .button-primary { background:var(--ink) !important; border-color:var(--ink) !important; border-radius:14px !important; padding:0 28px !important; font-weight:700; }
+.cfx-savebar .button-primary:hover { background:var(--ink2) !important; }
+.cfx-form-tools .cfx-savebar, .cfx-panel[data-panel=tools].is-active ~ .cfx-savebar { display:none; }
+
+.cfx-code { display:block; padding:12px 14px; border-radius:12px; background:var(--ink); color:var(--amber2); font-size:13px; word-break:break-all; }
+.cfx-tools { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.cfx-tools form { display:flex; gap:8px; align-items:center; }
+.cfx-danger { color:#c0392b !important; border-color:#e8b4ad !important; }
+
+@media (max-width: 960px) {
+  .cfx-layout { flex-direction:column; }
+  .cfx-tabs { position:static; width:100%; display:flex; flex-wrap:wrap; }
+  .cfx-tabs a { flex:1 1 45%; }
+  .cfx-cat { grid-template-columns:24px 1fr; }
+  .cfx-fixed .cfx-item-body { grid-template-columns:1fr; }
+  .cfx-hero { flex-wrap:wrap; }
+}

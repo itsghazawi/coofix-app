@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'الأكثر طلباً'), subtitle: sub(sec))));
           slivers.add(grid(f, 'feat'));
         case 'maintenance':
-          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'استعلم عن حالة عدّتك بالكود المرجعي')));
+          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'تابع حالة عدّتك برقم هاتفك')));
       }
     }
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));

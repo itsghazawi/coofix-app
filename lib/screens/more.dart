@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/api.dart';
 import '../data/config.dart';
@@ -27,7 +28,7 @@ class MoreScreen extends StatelessWidget {
     final site = cfg.s('contact.website', Config.site);
     final catalogue = cfg.s('contact.catalogue_url', Config.site);
     final services = <_Item>[
-      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'استعلام عن الصيانة'), 'تتبّع حالة عدّتك بالكود المرجعي', () => push(const MaintenanceScreen())),
+      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), 'تابع حالة عدّتك برقم هاتفك', () => push(const MaintenanceScreen())),
       if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
       if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
       if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
@@ -257,12 +258,12 @@ class MaintenanceScreen extends StatefulWidget {
   State<MaintenanceScreen> createState() => _MaintenanceScreenState();
 }
 
-/// Repair status lookup by reference code.
-/// Reads GET {site}/wp-json/coofix-app/v1/repair?code=XXXX
+/// Repair tracking by the customer's phone number.
+/// Reads GET {site}/wp-json/coofix-app/v1/repairs?phone=09xxxxxxxx
 class _MaintenanceScreenState extends State<MaintenanceScreen> {
   final code = TextEditingController();
   bool loading = false;
-  Map<String, dynamic>? result;
+  List<Map<String, dynamic>>? results;
   String? error;
 
   static const steps = [
@@ -274,27 +275,48 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     ('delivered', 'تم التسليم', Icons.handshake_rounded),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      final last = p.getString('repair_phone') ?? '';
+      if (last.isNotEmpty && mounted) {
+        code.text = last;
+        _lookup();
+      }
+    });
+  }
+
   Future<void> _lookup() async {
     final c = code.text.trim();
-    if (c.isEmpty) {
-      setState(() => error = 'أدخل الكود المرجعي');
+    final digits = c.replaceAll(RegExp(r'[^0-9٠-٩]'), '');
+    if (digits.length < 7) {
+      setState(() => error = 'أدخل رقم الهاتف المسجّل عند تسليم العدّة');
       return;
     }
     FocusScope.of(context).unfocus();
     setState(() {
       loading = true;
       error = null;
-      result = null;
+      results = null;
     });
     try {
       final r = await http
-          .get(Uri.parse('${Config.site}/wp-json/coofix-app/v1/repair?code=${Uri.encodeQueryComponent(c)}'))
+          .get(Uri.parse('${Config.site}/wp-json/coofix-app/v1/repairs?phone=${Uri.encodeQueryComponent(c)}'))
           .timeout(const Duration(seconds: 12));
-      final j = r.statusCode == 200 ? jsonDecode(utf8.decode(r.bodyBytes)) : null;
-      if (j is Map && j['found'] == true) {
-        setState(() => result = j.cast<String, dynamic>());
+      if (r.statusCode == 429) {
+        setState(() => error = 'محاولات كثيرة، حاول بعد قليل.');
+      } else if (r.statusCode == 200) {
+        final j = jsonDecode(utf8.decode(r.bodyBytes));
+        final items = ((j is Map ? j['items'] : null) as List? ?? []).whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+        if (items.isEmpty) {
+          setState(() => error = 'لا توجد طلبات صيانة مسجّلة على هذا الرقم.');
+        } else {
+          setState(() => results = items);
+          (await SharedPreferences.getInstance()).setString('repair_phone', c);
+        }
       } else {
-        setState(() => error = 'لم يتم العثور على طلب صيانة بهذا الكود. تأكد من الكود أو تواصل معنا.');
+        setState(() => error = 'خدمة تتبّع الصيانة غير متاحة حالياً.');
       }
     } catch (_) {
       setState(() => error = 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.');
@@ -304,22 +326,23 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _Page(title: Cfg.i.s('pages.maintenance_title', 'استعلام عن الصيانة'), icon: Icons.build_circle_rounded, children: [
-      Text(Cfg.i.s('pages.maintenance_intro', 'أدخل الكود المرجعي الموجود على إيصال الاستلام لمعرفة حالة عدّتك.'), style: T.b(14, c: C.muted, height: 1.7)),
+    return _Page(title: Cfg.i.s('pages.maintenance_title', 'تتبّع الصيانة'), icon: Icons.build_circle_rounded, children: [
+      Text(Cfg.i.s('pages.maintenance_intro', 'أدخل رقم هاتفك المسجّل عند تسليم العدّة لمتابعة حالة الصيانة.'), style: T.b(14, c: C.muted, height: 1.7)),
       const SizedBox(height: 18),
       TextField(
         controller: code,
         textAlign: TextAlign.center,
-        textCapitalization: TextCapitalization.characters,
+        keyboardType: TextInputType.phone,
+        textDirection: TextDirection.ltr,
         textInputAction: TextInputAction.search,
         onSubmitted: (_) => _lookup(),
-        style: T.h(20).copyWith(letterSpacing: 2),
+        style: T.h(20).copyWith(letterSpacing: 1.5),
         decoration: InputDecoration(
-          hintText: 'مثال: CFX-1024',
+          hintText: '09xx xxx xxx',
           hintStyle: T.b(15, c: C.muted),
           filled: true,
           fillColor: Colors.white,
-          prefixIcon: Icon(Icons.qr_code_2_rounded, color: C.muted),
+          prefixIcon: Icon(Icons.phone_iphone_rounded, color: C.muted),
           contentPadding: const EdgeInsets.symmetric(vertical: 18),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
@@ -339,7 +362,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               : Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.search_rounded, color: C.on(C.accent)),
                   const SizedBox(width: 8),
-                  Text('استعلام', style: T.h(16, c: C.on(C.accent))),
+                  Text('عرض طلباتي', style: T.h(16, c: C.on(C.accent))),
                 ]),
         ),
       ),
@@ -355,16 +378,15 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           ]),
         ),
       ],
-      if (result != null) ...[
-        const SizedBox(height: 20),
-        Reveal(child: _result(result!)),
-      ],
+      if (results != null)
+        for (var i = 0; i < results!.length; i++) ...[
+          const SizedBox(height: 18),
+          Reveal(index: i, child: _result(results![i])),
+        ],
       const SizedBox(height: 22),
       WhatsAppButton(
         label: 'تواصل مع مركز الصيانة',
-        onTap: () => openWhatsApp(
-            code.text.trim().isEmpty ? 'مرحباً، لدي استفسار عن الصيانة.' : 'مرحباً، أستفسر عن طلب الصيانة رقم ${code.text.trim()}',
-            number: Config.whatsappMaintenance),
+        onTap: () => openWhatsApp('مرحباً، لدي استفسار عن الصيانة.', number: Config.whatsappMaintenance),
       ),
     ]);
   }
@@ -378,9 +400,10 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
     final idx = steps.indexWhere((s) => s.$1 == status);
     final rows = <(String, String)>[
       if ('${r['device'] ?? ''}'.isNotEmpty) ('العدة', '${r['device']}'),
-      if ('${r['customer'] ?? ''}'.isNotEmpty) ('الاسم', '${r['customer']}'),
+      if ('${r['serial'] ?? ''}'.isNotEmpty) ('الرقم التسلسلي', '${r['serial']}'),
       if ('${r['received_at'] ?? ''}'.isNotEmpty) ('تاريخ الاستلام', '${r['received_at']}'),
-      if ('${r['expected_at'] ?? ''}'.isNotEmpty) ('الموعد المتوقع', '${r['expected_at']}'),
+      if ('${r['service_at'] ?? ''}'.isNotEmpty) ('موعد الصيانة', '${r['service_at']}'),
+      if ('${r['expected_at'] ?? ''}'.isNotEmpty) ('التسليم ابتداءً من', '${r['expected_at']}'),
       if ('${r['cost'] ?? ''}'.isNotEmpty) ('التكلفة', '${r['cost']}'),
       if (r['warranty'] != null) ('ضمن الكفالة', r['warranty'] == true ? 'نعم' : 'لا'),
     ];
@@ -437,12 +460,39 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
                 ),
             ]),
           ),
-        if ('${r['notes'] ?? ''}'.isNotEmpty)
+        if ('${r['work_done'] ?? ''}'.isNotEmpty)
           Container(
             margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.circular(16)),
-            child: Text('${r['notes']}', style: T.b(13.5, height: 1.7)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('ما تم في الصيانة', style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text('${r['work_done']}', style: T.b(14, height: 1.7, w: FontWeight.w600)),
+            ]),
+          ),
+        if ((r['timeline'] as List? ?? []).any((t) => t is Map && '${t['note'] ?? ''}'.isNotEmpty))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('سجل التحديثات', style: T.b(12.5, c: C.muted, w: FontWeight.w600)),
+              const SizedBox(height: 6),
+              for (final t in (r['timeline'] as List).reversed)
+                if (t is Map && '${t['note'] ?? ''}'.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Container(margin: const EdgeInsets.only(top: 7), width: 7, height: 7, decoration: BoxDecoration(color: C.accent, shape: BoxShape.circle)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('${t['note']}', style: T.b(13.5, w: FontWeight.w600, height: 1.6)),
+                          Text('${t['date'] ?? ''}', style: T.b(11.5, c: C.muted)),
+                        ]),
+                      ),
+                    ]),
+                  ),
+            ]),
           ),
       ]),
     );
