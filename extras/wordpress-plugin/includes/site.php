@@ -631,20 +631,17 @@ add_action('wp_footer', function () {
         array(wc_get_page_permalink('myaccount'), 'حسابي'),
     );
     echo '<template id="cfx-foot-tpl"><div class="cfx-foot">'
-        . '<div class="cfx-foot-brand"><img src="' . esc_url($icon) . '" alt="" width="52" height="52"><div><b>كوفيكس سوريا</b><span>عدّة بمواصفات احترافية — الوكيل المعتمد</span></div></div>'
-        . '<nav class="cfx-foot-col"><h4>روابط سريعة</h4>';
+        . '<div class="cfx-foot-brand"><img src="' . esc_url($icon) . '" alt="" width="46" height="46"><div><b>كوفيكس سوريا</b><span>الوكيل المعتمد لعدّة كوفيكس</span></div></div>'
+        . '<nav class="cfx-foot-links">';
     foreach ($links as $l) {
         echo '<a href="' . esc_url($l[0]) . '">' . esc_html($l[1]) . '</a>';
     }
-    echo '</nav><div class="cfx-foot-col"><h4>تواصل معنا</h4>';
+    echo '</nav><div class="cfx-foot-cta">';
     if ($wa) {
-        echo '<a class="cfx-foot-wa" href="https://wa.me/' . esc_attr($wa) . '" target="_blank" rel="noopener">' . cfx_svg('chat', 18) . '<span dir="ltr">' . esc_html($pretty($wa)) . '</span></a>';
+        echo '<a class="cfx-foot-btn is-wa" href="https://wa.me/' . esc_attr($wa) . '" target="_blank" rel="noopener">' . cfx_svg('chat', 18) . 'واتساب</a>';
     }
     if ($ph) {
-        echo '<a href="tel:+' . esc_attr($ph) . '">' . cfx_svg('phone', 18) . '<span dir="ltr">' . esc_html($pretty($ph)) . '</span></a>';
-    }
-    if (!empty($c['contact']['address'])) {
-        echo '<span>' . esc_html($c['contact']['address']) . '</span>';
+        echo '<a class="cfx-foot-btn" href="tel:+' . esc_attr($ph) . '">' . cfx_svg('phone', 18) . '<span dir="ltr">' . esc_html($pretty($ph)) . '</span></a>';
     }
     echo '</div></div></template>';
 }, 5);
