@@ -597,3 +597,12 @@ body.cfx-skin footer.ct-footer .ct-social-box a{width:32px;height:32px;display:g
   body.cfx-skin footer.ct-footer [data-row="bottom"]{margin:0 20px!important}
   body.cfx-skin footer.ct-footer [data-row="bottom"] .ct-container{flex-direction:column-reverse;justify-content:center!important;text-align:center}
 }
+
+/* Identity row: code tag + category chip */
+body.cfx-skin .cfx-idrow{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+body.cfx-skin .cfx-idrow .cfx-sku{margin:0!important}
+body.cfx-skin .cfx-idrow:empty{display:none}
+body.cfx-skin .cfx-catchip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:12px;background:#fff;border:1px solid var(--cfx-line);
+  font-size:13px;font-weight:700;color:var(--cfx-text)!important;text-decoration:none!important;transition:.2s}
+body.cfx-skin .cfx-catchip svg{fill:var(--cfx-amber)}
+body.cfx-skin .cfx-catchip:hover{border-color:var(--cfx-amber);box-shadow:0 6px 16px rgba(250,162,27,.18)}

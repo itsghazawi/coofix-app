@@ -98,7 +98,8 @@
         try { navigator.clipboard.writeText(v); } catch (e) {}
         row.classList.add('copied'); setTimeout(function () { row.classList.remove('copied'); }, 1600);
       });
-      el.parentNode.insertBefore(row, el);
+      var idrow = document.querySelector('.cfx-idrow');
+      if (idrow) idrow.insertBefore(row, idrow.firstChild); else el.parentNode.insertBefore(row, el);
     } else { el.appendChild(c); }
     el.appendChild(n);
   });

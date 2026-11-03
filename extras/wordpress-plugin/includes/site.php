@@ -555,7 +555,7 @@ add_action('wp', function () {
     }
 });
 
-// Product meta (category / SKU) as app-style chips.
+// Product identity row: code tag (added by site.js) + small category chip.
 add_action('wp', function () {
     if (!cfx_site_on() || !is_product()) {
         return;
@@ -568,23 +568,17 @@ add_action('wp', function () {
         }
         $cfg = coofix_app_get_config();
         $terms = get_the_terms($product->get_id(), 'product_cat');
-        echo '<div class="cfx-meta">';
+        echo '<div class="cfx-idrow">';
         if ($terms && !is_wp_error($terms)) {
             foreach ($terms as $t) {
                 if ($t->slug === 'uncategorized') {
                     continue;
                 }
-                echo '<a class="cfx-meta-cat" href="' . esc_url(get_term_link($t)) . '">'
-                    . '<span class="cfx-meta-ic">' . cfx_svg(cfx_cat_icon_key($t, $cfg), 20) . '</span>'
-                    . '<span class="cfx-meta-tx"><small>القسم</small><b>' . esc_html($t->name) . '</b></span>'
-                    . '<span class="cfx-meta-go">' . cfx_svg('arrow', 18) . '</span></a>';
+                echo '<a class="cfx-catchip" href="' . esc_url(get_term_link($t)) . '">' . cfx_svg(cfx_cat_icon_key($t, $cfg), 15) . '<span>' . esc_html($t->name) . '</span></a>';
             }
         }
-        if ($product->get_sku()) {
-            echo '<span class="cfx-meta-sku"><small>رمز المنتج</small><b dir="ltr">' . esc_html($product->get_sku()) . '</b></span>';
-        }
         echo '</div>';
-    }, 15);
+    }, 4);
 });
 
 // Product page extras: badges above the title + quick info under the cart button.
