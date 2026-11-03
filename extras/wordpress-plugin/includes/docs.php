@@ -30,15 +30,8 @@ add_action('woocommerce_admin_order_data_after_order_details', function ($order)
     echo '<p class="form-field form-field-wide"><a class="button" target="_blank" href="' . esc_url(cfx_invoice_url($order)) . '">فاتورة كوفيكس PDF</a></p>';
 });
 
-add_action('template_redirect', function () {
-    if (empty($_GET['cfx_invoice']) || !function_exists('wc_get_order')) {
-        return;
-    }
-    $order = wc_get_order(absint($_GET['cfx_invoice']));
-    $key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
-    if (!$order || (!hash_equals($order->get_order_key(), $key) && !current_user_can('manage_woocommerce'))) {
-        wp_die('الفاتورة غير متاحة', 403);
-    }
+/** Printable invoice page from a normalised array. */
+function cfx_invoice_render($d) {
     nocache_headers();
     header('X-Robots-Tag: noindex');
     $cfg = coofix_app_get_config();
@@ -47,15 +40,10 @@ add_action('template_redirect', function () {
     $tag = $cfg['general']['tagline'] ?: 'الوكيل الحصري والرسمي في سوريا';
     $wa = preg_replace('/\D/', '', $cfg['contact']['whatsapp_orders']);
     $wa_pretty = strpos($wa, '963') === 0 ? '0' . substr($wa, 3) : $wa;
-    $name = trim($order->get_formatted_billing_full_name());
-    $addr = implode(' — ', array_filter(array($order->get_billing_state(), $order->get_billing_city(), $order->get_billing_address_1())));
-    $date = $order->get_date_created() ? $order->get_date_created()->date_i18n('Y/m/d — H:i') : '';
-    $m = function ($v) use ($order) {
-        return wp_strip_all_tags(wc_price($v, array('currency' => $order->get_currency())));
-    };
+    $d = wp_parse_args($d, array('number' => '', 'date' => '', 'name' => '', 'phone' => '', 'addr' => '', 'items' => array(), 'sub' => '', 'disc' => '', 'coupons' => '', 'total' => '', 'note' => ''));
     ?><!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>فاتورة <?php echo esc_html($order->get_order_number()); ?> — <?php echo esc_html($brand); ?></title>
+<title>فاتورة <?php echo esc_html($d['number']); ?> — <?php echo esc_html($brand); ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 @page{size:A4;margin:0}
@@ -94,19 +82,70 @@ td.n b{display:block;font-size:15px}td.n code{display:inline-block;margin-top:4p
 <div class="page">
   <div class="hd">
     <div class="b"><img src="<?php echo esc_url($icon); ?>" alt=""><div><h1><?php echo esc_html($brand); ?></h1><small><?php echo esc_html($tag); ?></small></div></div>
-    <div class="t"><i>ORDER</i><b>فاتورة طلب</b><span dir="ltr">#<?php echo esc_html($order->get_order_number()); ?></span></div>
+    <div class="t"><i>ORDER</i><b>فاتورة طلب</b><span dir="ltr"><?php echo esc_html($d['number']); ?></span></div>
   </div>
   <div class="info">
-    <div><small>الزبون</small><b><?php echo esc_html($name ?: '—'); ?></b></div>
-    <div><small>رقم الهاتف</small><b dir="ltr"><?php echo esc_html($order->get_billing_phone() ?: '—'); ?></b></div>
-    <div><small>التاريخ</small><b><?php echo esc_html($date); ?></b></div>
-    <div class="w2"><small>العنوان</small><b><?php echo esc_html($addr ?: '—'); ?></b></div>
-    <div><small>طريقة الدفع</small><b><?php echo esc_html($order->get_payment_method_title() ?: 'الدفع عند الاستلام'); ?></b></div>
+    <div><small>الزبون</small><b><?php echo esc_html($d['name'] ?: '—'); ?></b></div>
+    <div><small>رقم الهاتف</small><b dir="ltr"><?php echo esc_html($d['phone'] ?: '—'); ?></b></div>
+    <div><small>التاريخ</small><b><?php echo esc_html($d['date']); ?></b></div>
+    <div class="w2"><small>العنوان</small><b><?php echo esc_html($d['addr'] ?: '—'); ?></b></div>
+    <div><small>طريقة الدفع</small><b>تحويل قبل الاستلام</b></div>
   </div>
   <table>
     <thead><tr><th>المنتج</th><th class="c">السعر</th><th class="c">الكمية</th><th class="l" style="font-family:inherit;font-weight:600">المجموع</th></tr></thead>
     <tbody>
-    <?php foreach ($order->get_items() as $it) :
+    <?php foreach ($d['items'] as $it) : ?>
+      <tr>
+        <td class="n"><b><?php echo esc_html($it['n']); ?></b><?php if (!empty($it['s'])) { echo '<code dir="ltr">' . esc_html($it['s']) . '</code>'; } ?></td>
+        <td class="c" dir="ltr"><?php echo esc_html($it['p']); ?></td>
+        <td class="c"><b><?php echo intval($it['q']); ?></b></td>
+        <td class="l" dir="ltr"><?php echo esc_html($it['t']); ?></td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody>
+  </table>
+  <div class="tot"><div>
+    <?php if ($d['sub']) : ?><p><span>المجموع الفرعي</span><span dir="ltr"><?php echo esc_html($d['sub']); ?></span></p><?php endif; ?>
+    <?php if ($d['disc']) : ?><p class="g"><span>حسم <?php echo esc_html($d['coupons']); ?></span><span dir="ltr">- <?php echo esc_html($d['disc']); ?></span></p><?php endif; ?>
+    <p><span>رسوم التوصيل</span><span>يدفعها الزبون</span></p>
+    <div class="grand"><span style="font-weight:700">الإجمالي</span><b dir="ltr"><?php echo esc_html($d['total']); ?></b></div>
+  </div></div>
+  <?php if ($d['note']) : ?><div class="note"><strong style="color:#15181D">ملاحظات الزبون:</strong> <?php echo esc_html($d['note']); ?></div><?php endif; ?>
+  <div class="sp"></div>
+  <div class="perks"><span><b style="color:#B56A00">●</b> كفالة 6 أشهر</span><span><b style="color:#B56A00">●</b> منتجات أصلية 100%</span><span><b style="color:#B56A00">●</b> توصيل لكل المحافظات</span></div>
+  <div class="ft"><span>شكراً لثقتك بكوفيكس — سنتواصل معك لتأكيد الطلب</span><span dir="ltr" style="font-weight:600">coofix.sy · <?php echo esc_html($wa_pretty); ?></span></div>
+</div>
+</body></html><?php
+    exit;
+}
+
+add_action('template_redirect', function () {
+    // Signed invoice link sent inside the WhatsApp order (the data travels in the link; nothing is stored).
+    if (!empty($_GET['cfx_order'])) {
+        $t = sanitize_text_field(wp_unslash($_GET['cfx_order']));
+        $parts = explode('.', $t);
+        if (count($parts) === 2 && hash_equals(substr(hash_hmac('sha256', $parts[0], wp_salt('auth')), 0, 32), $parts[1])) {
+            $json = base64_decode(strtr($parts[0], '-_', '+/'));
+            $d = json_decode((string) $json, true);
+            if (is_array($d)) {
+                cfx_invoice_render($d);
+            }
+        }
+        wp_die('رابط الفاتورة غير صالح', 403);
+    }
+    if (empty($_GET['cfx_invoice']) || !function_exists('wc_get_order')) {
+        return;
+    }
+    $order = wc_get_order(absint($_GET['cfx_invoice']));
+    $key = isset($_GET['key']) ? sanitize_text_field(wp_unslash($_GET['key'])) : '';
+    if (!$order || (!hash_equals($order->get_order_key(), $key) && !current_user_can('manage_woocommerce'))) {
+        wp_die('الفاتورة غير متاحة', 403);
+    }
+    $m = function ($v) use ($order) {
+        return wp_strip_all_tags(wc_price($v, array('currency' => $order->get_currency())));
+    };
+    $items = array();
+    foreach ($order->get_items() as $it) {
         $p = $it->get_product();
         $nm = $it->get_name();
         $sku = $p ? $p->get_sku() : '';
@@ -114,29 +153,48 @@ td.n b{display:block;font-size:15px}td.n code{display:inline-block;margin-top:4p
             $sku = trim($mm[1]);
             $nm = trim($mm[2]);
         }
-        $q = max(1, $it->get_quantity()); ?>
-      <tr>
-        <td class="n"><b><?php echo esc_html($nm); ?></b><?php if ($sku) { echo '<code dir="ltr">' . esc_html($sku) . '</code>'; } ?></td>
-        <td class="c" dir="ltr"><?php echo esc_html($m($order->get_item_subtotal($it, false, true))); ?></td>
-        <td class="c"><b><?php echo intval($q); ?></b></td>
-        <td class="l" dir="ltr"><?php echo esc_html($m($order->get_line_subtotal($it, false, true))); ?></td>
-      </tr>
-    <?php endforeach; ?>
-    </tbody>
-  </table>
-  <div class="tot"><div>
-    <p><span>المجموع الفرعي</span><span dir="ltr"><?php echo esc_html($m($order->get_subtotal())); ?></span></p>
-    <?php if ($order->get_total_discount() > 0) : ?>
-      <p class="g"><span>حسم <?php echo esc_html(strtoupper(implode('، ', $order->get_coupon_codes()))); ?></span><span dir="ltr">- <?php echo esc_html($m($order->get_total_discount())); ?></span></p>
-    <?php endif; ?>
-    <p><span>التوصيل</span><span><?php echo $order->get_shipping_total() > 0 ? esc_html($m($order->get_shipping_total())) : 'يُحدَّد عند التأكيد'; ?></span></p>
-    <div class="grand"><span style="font-weight:700">الإجمالي</span><b dir="ltr"><?php echo esc_html($m($order->get_total())); ?></b></div>
-  </div></div>
-  <?php if ($order->get_customer_note()) : ?><div class="note"><strong style="color:#15181D">ملاحظات الزبون:</strong> <?php echo esc_html($order->get_customer_note()); ?></div><?php endif; ?>
-  <div class="sp"></div>
-  <div class="perks"><span><b style="color:#B56A00">●</b> كفالة 6 أشهر</span><span><b style="color:#B56A00">●</b> منتجات أصلية 100%</span><span><b style="color:#B56A00">●</b> توصيل لكل المحافظات</span></div>
-  <div class="ft"><span>شكراً لثقتك بكوفيكس — سنتواصل معك لتأكيد الطلب</span><span dir="ltr" style="font-weight:600">coofix.sy · <?php echo esc_html($wa_pretty); ?></span></div>
-</div>
-</body></html><?php
-    exit;
+        $items[] = array('n' => $nm, 's' => $sku, 'q' => max(1, $it->get_quantity()), 'p' => $m($order->get_item_subtotal($it, false, true)), 't' => $m($order->get_line_subtotal($it, false, true)));
+    }
+    cfx_invoice_render(array(
+        'number'  => '#' . $order->get_order_number(),
+        'date'    => $order->get_date_created() ? $order->get_date_created()->date_i18n('Y/m/d — H:i') : '',
+        'name'    => trim($order->get_formatted_billing_full_name()),
+        'phone'   => preg_replace('/[\s\-]/', '', $order->get_billing_phone()),
+        'addr'    => implode(' — ', array_filter(array($order->get_billing_state(), $order->get_billing_city(), $order->get_billing_address_1()))),
+        'items'   => $items,
+        'sub'     => $m($order->get_subtotal()),
+        'disc'    => $order->get_total_discount() > 0 ? $m($order->get_total_discount()) : '',
+        'coupons' => strtoupper(implode('، ', $order->get_coupon_codes())),
+        'total'   => $m($order->get_total()),
+        'note'    => $order->get_customer_note(),
+    ));
 }, 1);
+
+/** REST: sign an order snapshot → invoice link (used by the website's WhatsApp order). */
+add_action('rest_api_init', function () {
+    register_rest_route('coofix-app/v1', '/order-link', array(
+        'methods'             => 'POST',
+        'permission_callback' => '__return_true',
+        'callback'            => function (WP_REST_Request $r) {
+            if (cfx_rate_limited('olink', 60, 600)) {
+                return new WP_Error('cfx_rate', 'محاولات كثيرة', array('status' => 429));
+            }
+            $in = (array) $r->get_json_params();
+            $clean = function ($v, $n = 120) { return mb_substr(sanitize_text_field((string) $v), 0, $n); };
+            $items = array();
+            foreach (array_slice((array) ($in['items'] ?? array()), 0, 40) as $it) {
+                $items[] = array('n' => $clean($it['n'] ?? ''), 's' => $clean($it['s'] ?? '', 40), 'q' => max(1, intval($it['q'] ?? 1)), 'p' => $clean($it['p'] ?? '', 40), 't' => $clean($it['t'] ?? '', 40));
+            }
+            $d = array(
+                'number' => $clean($in['number'] ?? '', 40), 'date' => $clean($in['date'] ?? '', 40),
+                'name' => $clean($in['name'] ?? ''), 'phone' => preg_replace('/[^\d+]/', '', (string) ($in['phone'] ?? '')),
+                'addr' => $clean($in['addr'] ?? '', 200), 'items' => $items,
+                'sub' => $clean($in['sub'] ?? '', 40), 'disc' => $clean($in['disc'] ?? '', 40), 'coupons' => $clean($in['coupons'] ?? '', 80),
+                'total' => $clean($in['total'] ?? '', 40), 'note' => '',
+            );
+            $b = rtrim(strtr(base64_encode(wp_json_encode($d)), '+/', '-_'), '=');
+            $sig = substr(hash_hmac('sha256', $b, wp_salt('auth')), 0, 32);
+            return array('url' => add_query_arg('cfx_order', $b . '.' . $sig, home_url('/')));
+        },
+    ));
+});

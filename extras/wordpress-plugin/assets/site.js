@@ -201,34 +201,26 @@
     }
     L.push('', 'معلومات الشحن:', 'المحافظة: ' + v.gov, 'المنطقة: ' + v.area, 'الاسم: ' + v.name, 'الهاتف: ' + v.phone);
     if (d.footer) L.push('', d.footer);
-    var text = L.join('\n'), url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(text);
     var btn = e.target.closest('[data-cfx-order]'), lbl = btn.querySelector('span');
-    // Second tap: the PDF is ready → share it (share must run straight from a tap).
-    if (btn._file) {
-      var f = btn._file; btn._file = null;
-      navigator.share({ files: [f], text: text }).catch(function () {}).then(function () { if (lbl) lbl.textContent = btn.dataset.l || 'اطلب عبر واتساب'; });
-      return;
-    }
-    var canFiles = false;
-    try { canFiles = !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.pdf', { type: 'application/pdf' })] })); } catch (x) {}
-    if (!window.cfxInvoicePdf) { openWA(url); return; }
+    if (btn.dataset.busy) return;
+    btn.dataset.busy = '1';
     if (!btn.dataset.l && lbl) btn.dataset.l = lbl.textContent;
     if (lbl) lbl.textContent = 'جاري تجهيز الفاتورة…';
+    var touch = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    var win = touch ? null : window.open('', '_blank'); // computers: open the tab now (popup rules)
     var dt = now.getFullYear() + '/' + p2(now.getMonth() + 1) + '/' + p2(now.getDate()) + ' — ' + p2(now.getHours()) + ':' + p2(now.getMinutes());
-    window.cfxInvoicePdf({ number: num, date: dt, items: x.items, sub: x.sub || '', disc: x.disc, coupons: x.coupons, total: x.total, hide: d.hide, ship: v, wa: d.waPretty || d.wa, logo: d.logo })
-      .then(function (blob) {
-        var file = new File([blob], 'Coofix-' + num + '.pdf', { type: 'application/pdf' });
-        if (canFiles) {
-          btn._file = file;
-          if (lbl) lbl.textContent = 'الفاتورة جاهزة — اضغط للإرسال على واتساب';
-          btn.classList.add('is-ready');
-        } else {
-          // Computer: download the PDF and open WhatsApp with the order text.
-          var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-          if (lbl) lbl.textContent = btn.dataset.l;
-          openWA(url);
-        }
-      }).catch(function () { if (lbl) lbl.textContent = btn.dataset.l; openWA(url); });
+    var payload = { number: num, date: dt, name: v.name, phone: v.phone, addr: v.gov + ' — ' + v.area, items: x.items, sub: x.sub || '', disc: x.disc || '', coupons: (x.coupons || []).join('، '), total: x.total };
+    function go(link) {
+      var text = L.join('\n');
+      if (link) text += '\n\n🧾 الفاتورة (PDF): ' + link;
+      var url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(text);
+      if (lbl) lbl.textContent = btn.dataset.l;
+      delete btn.dataset.busy;
+      if (win) { win.location.href = url; } else { location.href = url; }
+    }
+    fetch('/wp-json/coofix-app/v1/order-link', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { go(j && j.url ? j.url : ''); })
+      .catch(function () { go(''); });
   });
 })();

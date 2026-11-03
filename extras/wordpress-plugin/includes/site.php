@@ -600,7 +600,7 @@ add_action('woocommerce_after_add_to_cart_form', function () {
     }
     echo '<ul class="cfx-pinfo">'
         . '<li>' . cfx_svg('chat', 16) . 'طلب سريع عبر واتساب</li>'
-        . '<li>' . cfx_svg('handshake', 16) . 'الدفع عند الاستلام</li>'
+        . '<li>' . cfx_svg('handshake', 16) . 'الدفع بالتحويل قبل الاستلام</li>'
         . '<li>' . cfx_svg('build', 16) . 'صيانة معتمدة بعد البيع</li>'
         . '</ul>';
 });

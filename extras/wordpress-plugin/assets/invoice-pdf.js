@@ -45,7 +45,7 @@
       c.fillStyle = '#15181D'; c.font = '700 15px ' + BODY; c.fillText(fit(c, [sh.gov, sh.area].filter(Boolean).join(' — ') || '—', w2 - 32), R - 16, y + 48);
       rr(c, 48, y, gw, 62, 16); c.fillStyle = '#F4F3F0'; c.fill();
       c.fillStyle = '#6B7079'; c.font = '500 12px ' + BODY; c.fillText('طريقة الدفع', 48 + gw - 16, y + 24);
-      c.fillStyle = '#15181D'; c.font = '700 15px ' + BODY; c.fillText('الدفع عند الاستلام', 48 + gw - 16, y + 48);
+      c.fillStyle = '#15181D'; c.font = '700 15px ' + BODY; c.fillText('تحويل قبل الاستلام', 48 + gw - 16, y + 48);
       // table
       y += 98;
       c.fillStyle = '#6B7079'; c.font = '600 12px ' + BODY; c.textAlign = 'right'; c.fillText('المنتج', R - 14, y);
@@ -74,7 +74,7 @@
         c.font = '500 14px ' + BODY; c.fillStyle = '#4A4F57';
         if (o.sub) { c.textAlign = 'right'; c.fillText('المجموع الفرعي', tx + tw, y); c.textAlign = 'left'; c.direction = 'ltr'; c.fillText(o.sub, tx, y); c.direction = 'rtl'; y += 26; }
         if (o.disc) { c.fillStyle = '#16794A'; c.font = '700 14px ' + BODY; c.textAlign = 'right'; c.fillText('حسم ' + (o.coupons || []).join('، '), tx + tw, y); c.textAlign = 'left'; c.direction = 'ltr'; c.fillText('- ' + o.disc, tx, y); c.direction = 'rtl'; y += 26; }
-        c.fillStyle = '#4A4F57'; c.font = '500 14px ' + BODY; c.textAlign = 'right'; c.fillText('التوصيل', tx + tw, y); c.textAlign = 'left'; c.fillText('يُحدَّد عند التأكيد', tx, y); y += 16;
+        c.fillStyle = '#4A4F57'; c.font = '500 14px ' + BODY; c.textAlign = 'right'; c.fillText('رسوم التوصيل', tx + tw, y); c.textAlign = 'left'; c.font = '600 14px ' + BODY; c.fillText('يدفعها الزبون', tx, y); y += 16;
         rr(c, tx, y, tw, 52, 16); c.fillStyle = '#061922'; c.fill();
         c.fillStyle = '#fff'; c.font = '700 15px ' + BODY; c.textAlign = 'right'; c.fillText('الإجمالي', tx + tw - 18, y + 33);
         c.fillStyle = '#FAA21B'; c.font = '800 22px ' + HEAD; c.textAlign = 'left'; c.direction = 'ltr'; c.fillText(o.total, tx + 18, y + 35); c.direction = 'rtl';

@@ -105,7 +105,7 @@ class InvoiceDoc extends StatelessWidget {
           child: Column(children: [
             Row(children: [info('الزبون', name), const SizedBox(width: 12), info('رقم الهاتف', phone.replaceAll(RegExp(r'[\s-]'), ''), ltr: true), const SizedBox(width: 12), info('التاريخ', d)]),
             const SizedBox(height: 12),
-            Row(children: [info('العنوان', city, flex: 2), const SizedBox(width: 12), info('طريقة الدفع', 'الدفع عند الاستلام')]),
+            Row(children: [info('العنوان', city, flex: 2), const SizedBox(width: 12), info('طريقة الدفع', 'تحويل قبل الاستلام')]),
           ]),
         ),
         // Items
@@ -173,7 +173,7 @@ class InvoiceDoc extends StatelessWidget {
                     ]),
                   ],
                   const SizedBox(height: 6),
-                  Row(children: [Text('التوصيل', style: b(14, c: const Color(0xFF4A4F57))), const Spacer(), Text('يُحدَّد عند التأكيد', style: b(14, c: const Color(0xFF4A4F57)))]),
+                  Row(children: [Text('رسوم التوصيل', style: b(14, c: const Color(0xFF4A4F57))), const Spacer(), Text('يدفعها الزبون', style: b(14, c: const Color(0xFF4A4F57), w: FontWeight.w600))]),
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
