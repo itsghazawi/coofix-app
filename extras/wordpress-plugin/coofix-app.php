@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Coofix App
  * Description:       لوحة تحكم كاملة بتطبيق كوفيكس سوريا (أندرويد وآيفون): الهوية، البانرات، الأقسام، المنتجات، التواصل، الإعلانات، الصيانة والتحديثات.
- * Version:           1.7.2
+ * Version:           1.8.5
  * Author:            Coofix Syria
  * Text Domain:       coofix-app
  * Requires at least: 5.8
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('COOFIX_APP_VERSION', '1.7.2');
+define('COOFIX_APP_VERSION', '1.8.5');
 define('COOFIX_APP_OPTION', 'coofix_app_config');
 define('COOFIX_APP_URL', plugin_dir_url(__FILE__));
 define('COOFIX_APP_DIR', plugin_dir_path(__FILE__));
@@ -24,6 +24,8 @@ require_once COOFIX_APP_DIR . 'includes/rest.php';
 require_once COOFIX_APP_DIR . 'includes/admin.php';
 require_once COOFIX_APP_DIR . 'includes/repairs.php';
 require_once COOFIX_APP_DIR . 'includes/staff.php';
+require_once COOFIX_APP_DIR . 'includes/coupons.php';
+require_once COOFIX_APP_DIR . 'includes/docs.php';
 require_once COOFIX_APP_DIR . 'includes/tracking.php';
 require_once COOFIX_APP_DIR . 'includes/site.php';
 

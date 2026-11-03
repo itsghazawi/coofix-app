@@ -14,6 +14,7 @@ function cfx_tracking_shortcode($atts) {
         'title'    => 'تتبّع الصيانة',
         'subtitle' => 'أدخل رقم طلب الصيانة (CFX-…) أو رقم هاتفك المسجّل عند تسليم العدّة.',
     ), $atts, 'coofix_repair_tracking');
+    wp_enqueue_script('cfx-status-img', COOFIX_APP_URL . 'assets/status-img.js', array(), COOFIX_APP_VERSION, true);
     $cfg = function_exists('coofix_app_get_config') ? coofix_app_get_config() : array();
     $primary = isset($cfg['brand']['primary']) ? $cfg['brand']['primary'] : '#FAA21B';
     $dark = isset($cfg['brand']['dark']) ? $cfg['brand']['dark'] : '#061922';
@@ -43,7 +44,7 @@ function cfx_tracking_shortcode($atts) {
   <?php endif; ?>
 </div>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
 .cfxt{--line:#E6E3DD;--muted:#8A8F98;--bg:#F4F3F0;font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;max-width:720px;margin:24px auto;color:#15181D;text-align:right}
 .cfxt *{box-sizing:border-box}
 .cfxt-head{display:flex;gap:16px;align-items:center;padding:24px;border-radius:26px;color:#fff;background:radial-gradient(120% 140% at 100% 0%,#15394A 0%,var(--cfx-ink) 65%)}
@@ -87,6 +88,8 @@ function cfx_tracking_shortcode($atts) {
 .cfxt-log em{display:block;font-style:normal;color:var(--muted);font-size:12px}
 .cfxt-wa{margin-top:22px;height:56px;border-radius:18px;background:#25D366;color:#fff!important;text-decoration:none!important;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:700;font-size:16px}
 .cfxt-wa svg{width:22px;height:22px;fill:#fff}
+.cfxt-save{margin:0 20px 20px;width:calc(100% - 40px);height:50px;border:0;border-radius:16px;background:var(--cfx-ink,#061922);color:#fff;font:700 15px 'IBM Plex Sans Arabic',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.cfxt-save svg{color:#FAA21B}.cfxt-save:disabled{opacity:.7}
 @media(max-width:560px){.cfxt-form{flex-direction:column}.cfxt-in{flex:none;width:100%}.cfxt-btn{justify-content:center}.cfxt-head{padding:20px}.cfxt-head h2{font-size:21px}}
 </style>
 <script>
@@ -108,8 +111,13 @@ function cfx_tracking_shortcode($atts) {
     if(r.work_done)h+='<div class="cfxt-box"><small>ما تم في الصيانة</small>'+esc(r.work_done)+'</div>';
     var log=(r.timeline||[]).filter(function(t){return t&&t.note;}).reverse();
     if(log.length){h+='<div class="cfxt-log">';log.forEach(function(t){h+='<div><i></i><span>'+esc(t.note)+'<em>'+esc(t.date||'')+'</em></span></div>';});h+='</div>';}
+    var ln=(r.timeline||[]).filter(function(t){return t&&t.note;}).pop();
+    h+='<button type="button" class="cfxt-save" data-i="'+(window.cfxTrackItems=window.cfxTrackItems||[]).length+'">'+
+      '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M5 20h14v-2H5v2zm7-18l-5.5 5.5 1.41 1.41L11 5.83V16h2V5.83l3.09 3.08 1.41-1.41L12 2z" transform="rotate(180 12 12)"/></svg>حفظ صورة الحالة</button>';
+    window.cfxTrackItems.push({code:r.code,status:r.status,status_label:r.status_label,device:r.device,product_code:r.product_code||'',expected_at:r.expected_at,warranty:r.warranty,cost:r.cost,note:ln?ln.note:'',received_by:r.received_by||''});
     return h+'</div>';
   }
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.cfxt-save');if(!b||!window.cfxSaveStatus)return;window.cfxSaveStatus(window.cfxTrackItems[+b.dataset.i],'<?php echo esc_js(COOFIX_APP_URL . 'assets/icon.png'); ?>',b);});
   form.addEventListener('submit',function(e){
     e.preventDefault();
     var v=digitsAr(inp.value.trim()),d=v.replace(/\D/g,''),letters=/[A-Za-z]/.test(v),isCode=letters||(d.length>0&&d.length<=5);
@@ -122,7 +130,7 @@ function cfx_tracking_shortcode($atts) {
       var items=res.j&&res.j.items?res.j.items:(res.j&&res.j.found?[res.j]:[]);
       if(res.s===429){show('محاولات كثيرة، حاول بعد قليل.');return;}
       if(!items.length){show(isCode?'لا يوجد طلب صيانة بهذا الرقم.':'لا توجد طلبات صيانة مسجّلة على هذا الهاتف.');return;}
-      out.innerHTML=items.map(card).join('');
+      window.cfxTrackItems=[];out.innerHTML=items.map(card).join('');
     }).catch(function(){show('تعذّر الاتصال، حاول مجدداً.');}).then(function(){btn.disabled=false;btn.classList.remove('is-loading');});
   });
   var q=new URLSearchParams(location.search).get('repair');if(q){inp.value=q;form.dispatchEvent(new Event('submit'));}

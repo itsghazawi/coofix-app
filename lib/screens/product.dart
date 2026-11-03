@@ -295,13 +295,25 @@ class _Qty extends StatelessWidget {
             final n = await askQuantity(context, qty);
             if (n != null) onChange(n);
           },
-          child: SizedBox(
-            width: qty > 99 ? 52 : 40,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
-              child: Text('$qty', key: ValueKey(qty), textAlign: TextAlign.center, style: T.h(17).copyWith(decoration: TextDecoration.underline, decorationColor: C.line, decorationStyle: TextDecorationStyle.dotted)),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 6),
+            constraints: const BoxConstraints(minWidth: 54),
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: C.accent.withValues(alpha: 0.75), width: 1.4),
             ),
+            child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                child: Text('$qty', key: ValueKey(qty), textAlign: TextAlign.center, style: T.h(17)),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.edit_rounded, size: 13, color: C.accentDeep),
+            ]),
           ),
         ),
         b(Icons.remove_rounded, () => onChange(qty > 1 ? qty - 1 : 1)),

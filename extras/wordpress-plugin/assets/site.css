@@ -607,3 +607,53 @@ body.cfx-skin .cfx-catchip{display:inline-flex;align-items:center;gap:6px;height
 body.cfx-skin .cfx-catchip svg{fill:var(--cfx-amber)}
 body.cfx-skin .cfx-catchip:hover{border-color:var(--cfx-amber);box-shadow:0 6px 16px rgba(250,162,27,.18)}
 .cfx-side .cfx-bnav-n{order:9;margin-inline-start:auto!important;margin-inline-end:0}.cfx-side .cfx-side-i > span{order:2}.cfx-side .cfx-side-i > svg{order:1}
+
+/* Quantity: clearly typeable box between − and + */
+body.cfx-skin .quantity input.qty,body.cfx-skin .quantity input[type=number]{background:#fff!important;border:1.5px solid rgba(250,162,27,.8)!important;border-radius:10px!important;
+  min-width:56px;height:40px!important;min-height:40px!important;margin:auto 6px!important;font-family:var(--cfx-head);font-weight:700;font-size:16px;text-align:center;cursor:text;box-shadow:none!important}
+body.cfx-skin .quantity input.qty:focus{border-color:var(--cfx-amber)!important;box-shadow:0 0 0 3px rgba(250,162,27,.2)!important;outline:0}
+
+/* Add-to-cart toast */
+.cfx-toast{position:fixed;z-index:99990;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;transition:.3s;
+  display:flex;align-items:center;gap:10px;padding:8px 8px 8px 16px;border-radius:18px;background:#061922;color:#fff;box-shadow:0 14px 40px rgba(6,25,34,.35);font-family:var(--cfx-font);max-width:calc(100% - 32px)}
+.cfx-toast.on{opacity:1;transform:translate(-50%,0)}
+.cfx-toast-ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:rgba(250,162,27,.16)}.cfx-toast-ic svg{fill:#FAA21B}
+.cfx-toast-t{font-weight:600;font-size:14px;white-space:nowrap}
+.cfx-toast-go{background:#FAA21B;color:#061922!important;font-weight:800;font-size:13.5px;padding:9px 14px;border-radius:12px;text-decoration:none!important;white-space:nowrap}
+@media (min-width:1000px){.cfx-toast{bottom:28px;left:calc(50% - 130px)}}
+/* WhatsApp order */
+body.cfx-skin .cfx-wa-order{width:100%;min-height:56px;border:0;border-radius:18px;background:#25D366!important;color:#fff!important;display:flex;align-items:center;justify-content:center;gap:10px;
+  font:800 16px var(--cfx-head);cursor:pointer;box-shadow:0 10px 24px rgba(37,211,102,.3)}
+body.cfx-skin .cfx-wa-order svg{fill:#fff}
+.cfx-osheet{position:fixed;inset:0;z-index:99995;display:flex;align-items:flex-end;justify-content:center}
+.cfx-osheet-bg{position:absolute;inset:0;background:rgba(6,25,34,.55);opacity:0;transition:.25s}
+.cfx-osheet-box{position:relative;width:100%;max-width:520px;max-height:92vh;overflow:auto;background:#F4F3F0;border-radius:28px 28px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:.3s cubic-bezier(.2,.8,.2,1);font-family:var(--cfx-font);display:flex;flex-direction:column;gap:12px}
+.cfx-osheet.on .cfx-osheet-bg{opacity:1}.cfx-osheet.on .cfx-osheet-box{transform:none}
+.cfx-osheet h3{margin:0;font:800 21px var(--cfx-head);color:#15181D}.cfx-osheet p{margin:-6px 0 4px;color:var(--cfx-muted);font-size:13px}
+.cfx-osheet label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#4A4F57}
+.cfx-osheet input,.cfx-osheet textarea{border:1px solid #E6E3DD!important;border-radius:14px!important;background:#fff!important;padding:13px 14px!important;font:500 15px var(--cfx-font)!important;width:100%;box-sizing:border-box}
+.cfx-osheet input:focus,.cfx-osheet textarea:focus{border-color:#FAA21B!important;outline:0;box-shadow:0 0 0 3px rgba(250,162,27,.18)}
+.cfx-osheet-sum{background:#fff;border:1px solid #E6E3DD;border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.cfx-osheet-sum div{display:flex;justify-content:space-between;font-size:13.5px;color:#16794A;font-weight:600}.cfx-osheet-sum .t{color:#15181D;font-size:15px;font-weight:800}
+.cfx-osheet-err{color:#D64545;font-weight:600;font-size:13px}
+.cfx-osheet-x{position:absolute;top:14px;left:14px;width:36px;height:36px;border-radius:50%;border:0;background:#fff;font-size:22px;line-height:1;cursor:pointer;color:#15181D}
+@media (min-width:1000px){.cfx-osheet{align-items:center}.cfx-osheet-box{border-radius:28px;transform:translateY(30px);opacity:0}.cfx-osheet.on .cfx-osheet-box{opacity:1}}
+.cfx-osheet[hidden],.cfx-toast[hidden]{display:none!important}
+.cfx-osheet select{border:1px solid #E6E3DD!important;border-radius:14px!important;background:#fff!important;padding:13px 14px!important;font:500 15px var(--cfx-font)!important;width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+
+/* Shipping info on the cart: always open, styled as a section */
+body.cfx-skin .woocommerce-shipping-calculator .shipping-calculator-form{display:block!important;height:auto!important;margin-top:10px}
+body.cfx-skin .woocommerce-shipping-calculator .shipping-calculator-button{pointer-events:none;cursor:default;text-decoration:none!important;font-weight:800;color:var(--cfx-text)!important;font-size:15px}
+body.cfx-skin .woocommerce-shipping-calculator .shipping-calculator-button:after{display:none!important}
+body.cfx-skin .shipping-calculator-form .form-row{margin:0 0 10px!important}
+body.cfx-skin .shipping-calculator-form :is(input.input-text,select){width:100%;border:1px solid #E6E3DD!important;border-radius:14px!important;background:#fff!important;padding:12px 14px!important;min-height:48px;font:500 15px var(--cfx-font)!important}
+body.cfx-skin .woocommerce-shipping-destination,body.cfx-skin .woocommerce-shipping-contents{display:none!important}
+/* Inline shipping info (cart) */
+body.cfx-skin .woocommerce-shipping-calculator,body.cfx-skin tr.woocommerce-shipping-totals{display:none!important}
+body.cfx-skin .cfx-ship{display:flex;flex-direction:column;gap:10px;margin:4px 0 14px;padding:16px;border-radius:20px;background:#F7F6F3;border:1px solid #E6E3DD}
+body.cfx-skin .cfx-ship h3{margin:0 0 2px;font:800 16px var(--cfx-head);color:var(--cfx-text)}
+body.cfx-skin .cfx-ship label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:600;color:#4A4F57;margin:0}
+body.cfx-skin .cfx-ship :is(input,select){width:100%;box-sizing:border-box;border:1px solid #E6E3DD!important;border-radius:14px!important;background:#fff!important;padding:12px 14px!important;min-height:48px;font:500 15px var(--cfx-font)!important;-webkit-appearance:none;appearance:none}
+body.cfx-skin .cfx-ship :is(input,select):focus{border-color:#FAA21B!important;outline:0;box-shadow:0 0 0 3px rgba(250,162,27,.18)}
+body.cfx-skin .cfx-ship-err{color:#D64545;font-weight:700;font-size:13px}

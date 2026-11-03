@@ -244,11 +244,11 @@ function coofix_app_defaults() {
             'trader_message'    => 'مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة لدى كوفيكس سوريا.',
             'search_suggestions'=> array('مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'),
             'stats_products_label' => 'منتج',
-            'footer_note'       => 'الإصدار 1.0.0',
+            'footer_note'       => '',
             'more_items'        => array(
                 'maintenance' => true,
                 'warranty'    => true,
-                'catalogue'   => true,
+                'catalogue'   => false,
                 'traders'     => true,
                 'whatsapp'    => true,
                 'call'        => true,

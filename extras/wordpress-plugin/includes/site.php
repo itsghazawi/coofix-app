@@ -639,3 +639,89 @@ add_action('wp_footer', function () {
     }
     echo '</div></div></template>';
 }, 5);
+
+/* ------------------------------------------------------------------ */
+/* WhatsApp ordering on the website (same as the app) + cart toast     */
+/* ------------------------------------------------------------------ */
+
+// Replace "Proceed to checkout" with the WhatsApp order button.
+add_action('wp', function () {
+    if (!cfx_site_on()) {
+        return;
+    }
+    remove_action('woocommerce_proceed_to_checkout', 'woocommerce_button_proceed_to_checkout', 20);
+    add_action('woocommerce_proceed_to_checkout', function () {
+        $c = coofix_app_get_config();
+        echo '<div class="cfx-ship"><h3>معلومات الشحن</h3>'
+            . '<label>المحافظة *<select name="gov"><option value="">اختر المحافظة</option><option>دمشق</option><option>ريف دمشق</option><option>حلب</option><option>حمص</option><option>حماة</option><option>اللاذقية</option><option>طرطوس</option><option>إدلب</option><option>درعا</option><option>السويداء</option><option>القنيطرة</option><option>دير الزور</option><option>الرقة</option><option>الحسكة</option></select></label>'
+            . '<label>المنطقة *<input name="area" placeholder="مثلاً: المزة — شارع الجلاء"></label>'
+            . '<label>الاسم الثلاثي *<input name="name" autocomplete="name" placeholder="الاسم الأول واسم الأب والكنية"></label>'
+            . '<label>رقم الهاتف *<input name="phone" type="tel" dir="ltr" autocomplete="tel" placeholder="09XX XXX XXX"></label>'
+            . '<div class="cfx-ship-err" hidden></div></div>';
+        echo '<button type="button" class="cfx-wa-order" data-cfx-order>' . cfx_svg('chat', 22) . '<span>' . esc_html($c['order']['button'] ?: 'اطلب عبر واتساب') . '</span></button>';
+    }, 20);
+});
+
+// Checkout page itself sends people back to the cart (orders go through WhatsApp).
+add_action('template_redirect', function () {
+    if (cfx_site_on() && function_exists('is_checkout') && is_checkout() && !is_wc_endpoint_url() && !is_admin()) {
+        wp_safe_redirect(wc_get_cart_url());
+        exit;
+    }
+}, 20);
+
+add_action('wp_footer', function () {
+    if (!cfx_site_on() || !function_exists('WC')) {
+        return;
+    }
+    $c = coofix_app_get_config();
+    // Toast shown after adding to cart (ajax and non-ajax).
+    echo '<div class="cfx-toast" role="status" aria-live="polite" hidden><span class="cfx-toast-ic">' . cfx_svg('cart', 20) . '</span><span class="cfx-toast-t">تمت الإضافة إلى السلة</span>'
+        . '<a class="cfx-toast-go" href="' . esc_url(wc_get_cart_url()) . '">عرض السلة</a></div>';
+    if (!is_cart() || !WC()->cart || WC()->cart->is_empty()) {
+        return;
+    }
+    $cart = WC()->cart;
+    $items = array();
+    foreach ($cart->get_cart() as $ci) {
+        $p = $ci['data'];
+        $nm = $p->get_name();
+        $sku = $p->get_sku();
+        if (!$sku && preg_match('/^\s*([A-Za-z0-9][A-Za-z0-9\-_.\/ ]{1,24}?)\s*\|\s*(.+)$/u', $nm, $m)) {
+            $sku = trim($m[1]);
+            $nm = trim($m[2]);
+        }
+        $items[] = array('n' => $nm, 's' => $sku, 'q' => intval($ci['quantity']), 'p' => wp_strip_all_tags(wc_price($p->get_price())));
+    }
+    $o = $c['order'];
+    $data = array(
+        'wa'      => preg_replace('/\D/', '', $c['contact']['whatsapp_orders']),
+        'header'  => str_replace('من التطبيق', 'من الموقع', (string) $o['header']),
+        'footer'  => (string) $o['footer'],
+        'items'   => $items,
+        'sub'     => wp_strip_all_tags(wc_price($cart->get_subtotal())),
+        'disc'    => $cart->get_discount_total() > 0 ? wp_strip_all_tags(wc_price($cart->get_discount_total())) : '',
+        'coupons' => array_map('strtoupper', $cart->get_applied_coupons()),
+        'total'   => wp_strip_all_tags(wc_price($cart->get_total('edit'))),
+        'hide'    => !empty($c['products']['hide_prices']),
+        'askCity' => !isset($o['ask_city']) || !empty($o['ask_city']),
+        'askPhone'=> !empty($o['ask_phone']),
+    );
+    ?>
+    <script>window.cfxOrder=<?php echo wp_json_encode($data); ?>;</script>
+    <?php
+}, 30);
+
+// Shipping calculator on the cart: Syria only, friendlier wording.
+add_filter('woocommerce_shipping_calculator_enable_country', '__return_false');
+add_filter('woocommerce_shipping_calculator_enable_postcode', '__return_false');
+add_filter('gettext', function ($t, $text, $domain) {
+    if ($domain === 'woocommerce') {
+        if ($text === 'Calculate shipping') { return 'أضف معلومات الشحن'; }
+        if ($text === 'Update') { return 'حفظ'; }
+        if ($text === 'State / County' || $text === 'State / County / Region') { return 'المحافظة'; }
+        if ($text === 'Town / City') { return 'المنطقة'; }
+        if (in_array($text, array('Shipping options will be updated during checkout.', 'Shipping costs are calculated during checkout.', 'Enter your address to view shipping options.', 'Shipping to %s.', 'Change address'), true)) { return ''; }
+    }
+    return $t;
+}, 20, 3);

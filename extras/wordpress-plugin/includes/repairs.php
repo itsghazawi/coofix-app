@@ -569,6 +569,8 @@ function cfx_repair_public($id) {
         'work_done'    => $d['work_done'],
         'notes'        => $d['work_done'],
         'timeline'     => $tl,
+        'received_by'  => $d['created_by'] === 'برنامج الصيانة' ? '' : $d['created_by'],
+        'product_code' => $d['product_code'],
     );
 }
 

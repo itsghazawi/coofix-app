@@ -26,11 +26,9 @@ class MoreScreen extends StatelessWidget {
     final maps = cfg.s('contact.maps_url');
     final hours = cfg.s('contact.hours');
     final site = cfg.s('contact.website', Config.site);
-    final catalogue = cfg.s('contact.catalogue_url', Config.site);
     final services = <_Item>[
       if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'تتبّع الصيانة'), 'تابع حالة عدّتك برقم الطلب أو الهاتف', () => push(const MaintenanceScreen())),
       if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
-      if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
       if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
           () => openWhatsApp(cfg.s('pages.trader_message', 'مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة.'), number: Config.whatsappSupport)),
     ];
@@ -92,7 +90,9 @@ class MoreScreen extends StatelessWidget {
           ]),
         ],
         const SizedBox(height: 26),
-        Center(child: Text(cfg.s('pages.footer_note', 'الإصدار $kAppVersion'), style: T.b(12, c: C.muted))),
+        Center(child: Text('الإصدار $kAppVersion', style: T.b(12, c: C.muted))),
+        if (cfg.s('pages.footer_note').isNotEmpty && !cfg.s('pages.footer_note').contains('الإصدار'))
+          Center(child: Text(cfg.s('pages.footer_note'), style: T.b(12, c: C.muted))),
       ],
     );
   }

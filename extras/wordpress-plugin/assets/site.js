@@ -112,3 +112,89 @@
   f.insertBefore(tpl.content.cloneNode(true), f.firstChild);
   f.classList.add('cfx-has-foot');
 })();
+
+/* Add-to-cart toast */
+(function () {
+  var t = document.querySelector('.cfx-toast'); if (!t) return;
+  var timer;
+  function show() { t.hidden = false; requestAnimationFrame(function () { t.classList.add('on'); }); clearTimeout(timer); timer = setTimeout(hide, 4500); }
+  function hide() { t.classList.remove('on'); setTimeout(function () { t.hidden = true; }, 300); }
+  if (window.jQuery) jQuery(document.body).on('added_to_cart', show);
+  // Non-ajax add (single product page reload): Woo prints a message with a cart link.
+  var msg = document.querySelector('.woocommerce-message .wc-forward, .woocommerce-message a[href*="cart"]');
+  if (msg && !document.body.classList.contains('woocommerce-cart')) { var box = msg.closest('.woocommerce-message'); if (box) box.style.display = 'none'; show(); }
+})();
+
+/* WhatsApp order on the cart page — shipping info is inline; the live cart comes from the Store API */
+(function () {
+  // window.cfxOrder is printed after this file (footer), so read it lazily.
+  var live = null, KEY = 'cfx_ship';
+  function money(v, t) {
+    var mu = t.currency_minor_unit || 0, n = (parseInt(v, 10) || 0) / Math.pow(10, mu);
+    var p = n.toFixed(mu).split('.'), th = t.currency_thousand_separator || ',', ds = t.currency_decimal_separator || '.';
+    var s = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, th) + (p[1] && /[1-9]/.test(p[1]) ? ds + p[1] : '');
+    return (t.currency_prefix || '') + s + (t.currency_suffix || '');
+  }
+  function load() {
+    fetch('/wp-json/wc/store/v1/cart', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (c) {
+        var t = c.totals || {};
+        live = {
+          items: (c.items || []).map(function (it) {
+            var n = it.name || '', sku = it.sku || '', m = n.match(/^\s*([A-Za-z0-9][A-Za-z0-9\-_.\/ ]{1,24}?)\s*\|\s*(.+)$/);
+            if (!sku && m) { sku = m[1].trim(); n = m[2].trim(); }
+            return { n: n, s: sku, q: it.quantity, p: money(it.prices && it.prices.price, it.prices || t) };
+          }),
+          coupons: (c.coupons || []).map(function (x) { return String(x.code || '').toUpperCase(); }),
+          disc: parseInt(t.total_discount, 10) > 0 ? money(t.total_discount, t) : '',
+          total: money(t.total_price, t)
+        };
+      }).catch(function () {});
+  }
+  function box() { return document.querySelector('.cfx-ship'); }
+  function read() { var b = box(), o = {}; if (!b) return o; ['gov', 'area', 'name', 'phone'].forEach(function (k) { var el = b.querySelector('[name=' + k + ']'); o[k] = el ? el.value.trim() : ''; }); return o; }
+  function restore() {
+    var b = box(); if (!b) return; var o = {};
+    try { o = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+    Object.keys(o).forEach(function (k) { var el = b.querySelector('[name=' + k + ']'); if (el && !el.value) el.value = o[k]; });
+  }
+  document.addEventListener('input', function (e) { if (e.target.closest && e.target.closest('.cfx-ship')) { try { localStorage.setItem(KEY, JSON.stringify(read())); } catch (x) {} } });
+  document.addEventListener('change', function (e) { if (e.target.closest && e.target.closest('.cfx-ship')) { try { localStorage.setItem(KEY, JSON.stringify(read())); } catch (x) {} } });
+  if (window.jQuery) jQuery(document.body).on('updated_cart_totals applied_coupon removed_coupon updated_wc_div', function () { restore(); load(); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { restore(); load(); }); else setTimeout(function () { restore(); load(); }, 0);
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-cfx-order]')) return;
+    e.preventDefault();
+    var d = window.cfxOrder || { items: [], coupons: [], disc: '', total: '', header: '', footer: '', wa: '963955791888' };
+    var v = read(), b = box(), err = b ? b.querySelector('.cfx-ship-err') : null;
+    var miss = !v.gov ? 'المحافظة' : !v.area ? 'المنطقة' : !v.name ? 'الاسم الثلاثي' : !v.phone ? 'رقم الهاتف' : '';
+    if (miss) {
+      if (err) { err.textContent = 'الرجاء تعبئة ' + miss; err.hidden = false; }
+      var el = b && b.querySelector('[name=' + ({ 'المحافظة': 'gov', 'المنطقة': 'area', 'الاسم الثلاثي': 'name', 'رقم الهاتف': 'phone' })[miss] + ']');
+      if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      return;
+    }
+    if (err) err.hidden = true;
+    var x = live || { items: d.items, coupons: d.coupons, disc: d.disc, total: d.total };
+    var now = new Date(), p2 = function (n) { return String(n).padStart(2, '0'); };
+    var num = 'WEB-' + String(now.getFullYear()).slice(2) + p2(now.getMonth() + 1) + p2(now.getDate()) + '-' + p2(now.getHours()) + p2(now.getMinutes()) + p2(now.getSeconds());
+    var L = ['رقم الطلب: ' + num];
+    if (d.header) L.push(d.header, '');
+    x.items.forEach(function (it, i) {
+      L.push((i + 1) + ') ' + it.n);
+      if (it.s) L.push('   الرمز: ' + it.s);
+      L.push(d.hide ? '   الكمية: ' + it.q : '   الكمية: ' + it.q + ' × ' + it.p);
+    });
+    if (!d.hide) {
+      L.push('');
+      if (x.disc) L.push('كود الحسم: ' + x.coupons.join('، '), 'الحسم: ' + x.disc);
+      L.push('الإجمالي: ' + x.total);
+    }
+    L.push('', 'معلومات الشحن:', 'المحافظة: ' + v.gov, 'المنطقة: ' + v.area, 'الاسم: ' + v.name, 'الهاتف: ' + v.phone);
+    if (d.footer) L.push('', d.footer);
+    var url = 'https://wa.me/' + d.wa + '?text=' + encodeURIComponent(L.join('\n'));
+    var w = window.open(url, '_blank');
+    if (!w) location.href = url;
+  });
+})();

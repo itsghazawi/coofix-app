@@ -558,7 +558,6 @@ function coofix_app_admin_page() {
 
                     coofix_app_card_open('الروابط والعنوان', '', 'admin-links');
                     coofix_app_field($cfg, 'contact.website', 'الموقع الإلكتروني', 'url', array('ltr' => true));
-                    coofix_app_field($cfg, 'contact.catalogue_url', 'رابط الكتالوج (PDF أو صفحة)', 'url', array('ltr' => true));
                     coofix_app_field($cfg, 'contact.address', 'العنوان', 'text', array('wide' => true));
                     coofix_app_field($cfg, 'contact.maps_url', 'رابط الموقع على الخريطة', 'url', array('ltr' => true));
                     coofix_app_card_close();
@@ -600,7 +599,7 @@ function coofix_app_admin_page() {
                     coofix_app_card_close();
 
                     coofix_app_card_open('صفحة "المزيد"', 'اختر العناصر الظاهرة.', 'menu-alt');
-                    $labels = array('maintenance' => 'طلب صيانة', 'warranty' => 'الكفالة', 'catalogue' => 'تحميل الكتالوج', 'traders' => 'للتجار', 'whatsapp' => 'واتساب', 'call' => 'اتصال مباشر', 'website' => 'الموقع الإلكتروني', 'email' => 'البريد', 'location' => 'العنوان والخريطة', 'socials' => 'التواصل الاجتماعي', 'about' => 'من نحن');
+                    $labels = array('maintenance' => 'طلب صيانة', 'warranty' => 'الكفالة', 'traders' => 'للتجار', 'whatsapp' => 'واتساب', 'call' => 'اتصال مباشر', 'website' => 'الموقع الإلكتروني', 'email' => 'البريد', 'location' => 'العنوان والخريطة', 'socials' => 'التواصل الاجتماعي', 'about' => 'من نحن');
                     foreach ($labels as $k => $l) {
                         coofix_app_field($cfg, 'pages.more_items.' . $k, $l, 'toggle');
                     }

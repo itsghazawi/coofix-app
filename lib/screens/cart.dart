@@ -1,4 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../data/api.dart';
+import '../data/docs.dart';
+import '../widgets/invoice.dart';
 
 import '../data/config.dart';
 import '../data/store.dart';
@@ -154,6 +162,34 @@ class _Checkout extends StatefulWidget {
   State<_Checkout> createState() => _CheckoutState();
 }
 
+/// Result of a discount-code check (WooCommerce coupon on the site).
+class CouponResult {
+  final String code, label, message;
+  final num discount;
+  CouponResult(this.code, this.label, this.discount, this.message);
+}
+
+Future<Object> checkCoupon(String code, {bool use = false}) async {
+  try {
+    final r = await http
+        .post(Uri.parse('${Config.site}/wp-json/coofix-app/v1/coupon'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'code': code.trim(),
+              'use': use ? 1 : 0,
+              'items': [for (final e in Store.i.items) {'id': e.key.id, 'qty': e.value}],
+            }))
+        .timeout(const Duration(seconds: 15));
+    final j = jsonDecode(utf8.decode(r.bodyBytes));
+    if (j is Map && j['ok'] == true) {
+      return CouponResult('${j['code']}', '${j['label'] ?? ''}', (j['discount'] as num?) ?? 0, '${j['message'] ?? ''}');
+    }
+    return (j is Map ? j['message'] : null)?.toString() ?? 'الكود غير صحيح';
+  } catch (_) {
+    return 'تعذّر التحقق من الكود، تحقق من الإنترنت';
+  }
+}
+
 class _CheckoutState extends State<_Checkout> {
   void _order() {
     final cfg = Cfg.i;
@@ -161,67 +197,193 @@ class _CheckoutState extends State<_Checkout> {
     final city = TextEditingController();
     final phone = TextEditingController();
     final note = TextEditingController();
-    String? error;
+    final code = TextEditingController();
+    String? error, codeMsg;
+    CouponResult? coupon;
+    bool checking = false, sending = false;
+    final fmt = Store.i.items.first.key.price;
+    final hide = cfg.b('products.hide_prices');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (c) => StatefulBuilder(
-        builder: (c, setSheet) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(c).bottom),
-          child: Container(
-            padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
-            decoration: BoxDecoration(color: C.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
-            child: SingleChildScrollView(
-              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
-                const SizedBox(height: 18),
-                Text(cfg.s('order.sheet_title', 'إتمام الطلب'), style: T.h(21)),
-                const SizedBox(height: 4),
-                Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
-                const SizedBox(height: 18),
-                if (cfg.b('order.ask_name', true)) ...[
-                  Field(ctrl: name, label: cfg.b('order.require_name') ? 'الاسم الكامل *' : 'الاسم الكامل', icon: Icons.person_rounded),
-                  const SizedBox(height: 12),
-                ],
-                if (cfg.b('order.ask_city', true)) ...[
-                  Field(ctrl: city, label: cfg.b('order.require_city') ? 'المدينة / المنطقة *' : 'المدينة / المنطقة', icon: Icons.location_on_rounded),
-                  const SizedBox(height: 12),
-                ],
-                if (cfg.b('order.ask_phone')) ...[
-                  Field(ctrl: phone, label: cfg.b('order.require_phone') ? 'رقم الهاتف *' : 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
-                  const SizedBox(height: 12),
-                ],
-                if (cfg.b('order.ask_note', true)) ...[
-                  Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
-                  const SizedBox(height: 12),
-                ],
-                if (error != null) Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(error!, style: T.b(13, c: const Color(0xFFD64545), w: FontWeight.w600)),
+        builder: (c, setSheet) {
+          Future<void> apply() async {
+            if (code.text.trim().isEmpty) return;
+            FocusScope.of(c).unfocus();
+            setSheet(() {
+              checking = true;
+              codeMsg = null;
+            });
+            final r = await checkCoupon(code.text);
+            setSheet(() {
+              checking = false;
+              if (r is CouponResult) {
+                coupon = r;
+                codeMsg = null;
+              } else {
+                coupon = null;
+                codeMsg = '$r';
+              }
+            });
+          }
+
+          Future<void> send() async {
+            String? miss;
+            if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = 'الاسم';
+            if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = 'المدينة';
+            if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
+            if (miss != null) {
+              setSheet(() => error = 'الرجاء تعبئة $miss');
+              return;
+            }
+            setSheet(() {
+              sending = true;
+              error = null;
+            });
+            final items = Store.i.items;
+            final now = DateTime.now();
+            final number = 'ORD-${now.year % 100}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+            var text = orderMessage(items, Store.i.total, fmt, name: name.text.trim(), city: city.text.trim(), phone: phone.text.trim(), note: note.text.trim());
+            if (coupon != null) {
+              text += '\n\nكود الحسم: ${coupon!.code} (${coupon!.label})\nالحسم: ${fmt.fmt(coupon!.discount)}\nالإجمالي بعد الحسم: ${fmt.fmt(Store.i.total - coupon!.discount)}';
+              unawaited(checkCoupon(coupon!.code, use: true));
+            }
+            text = 'رقم الطلب: $number\n$text';
+            try {
+              if (!cfg.b('order.pdf', true)) throw 'text';
+              final png = await Docs.png(
+                InvoiceDoc(
+                  number: number,
+                  date: now,
+                  items: items,
+                  fmt: fmt,
+                  subtotal: Store.i.total,
+                  discount: coupon?.discount ?? 0,
+                  couponCode: coupon?.code ?? '',
+                  couponLabel: coupon?.label ?? '',
+                  name: name.text.trim(),
+                  city: city.text.trim(),
+                  phone: phone.text.trim(),
+                  note: note.text.trim(),
+                  hidePrices: hide,
                 ),
-                const SizedBox(height: 8),
-                WhatsAppButton(
-                  label: 'أرسل الطلب عبر واتساب',
-                  onTap: () {
-                    String? miss;
-                    if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = 'الاسم';
-                    if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = 'المدينة';
-                    if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
-                    if (miss != null) {
-                      setSheet(() => error = 'الرجاء تعبئة $miss');
-                      return;
-                    }
-                    final items = Store.i.items;
-                    openWhatsApp(orderMessage(items, Store.i.total, items.first.key.price,
-                        name: name.text.trim(), city: city.text.trim(), phone: phone.text.trim(), note: note.text.trim()));
-                    Navigator.pop(c);
-                  },
-                ),
-              ]),
+                const Size(794, 1123),
+              );
+              final pdf = await Docs.pdfFromPng(png);
+              await Docs.sendToWhatsApp(pdf, 'Coofix-$number.pdf', mime: 'application/pdf', phone: Config.whatsapp, text: text);
+            } catch (_) {
+              await openWhatsApp(text);
+            }
+            if (c.mounted) Navigator.pop(c);
+          }
+
+          final sub = Store.i.total;
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(c).bottom),
+            child: Container(
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
+              decoration: BoxDecoration(color: C.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
+                  const SizedBox(height: 18),
+                  Text(cfg.s('order.sheet_title', 'إتمام الطلب'), style: T.h(21)),
+                  const SizedBox(height: 4),
+                  Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
+                  const SizedBox(height: 18),
+                  if (cfg.b('order.ask_name', true)) ...[
+                    Field(ctrl: name, label: cfg.b('order.require_name') ? 'الاسم الكامل *' : 'الاسم الكامل', icon: Icons.person_rounded),
+                    const SizedBox(height: 12),
+                  ],
+                  if (cfg.b('order.ask_city', true)) ...[
+                    Field(ctrl: city, label: cfg.b('order.require_city') ? 'المدينة / المنطقة *' : 'المدينة / المنطقة', icon: Icons.location_on_rounded),
+                    const SizedBox(height: 12),
+                  ],
+                  if (cfg.b('order.ask_phone')) ...[
+                    Field(ctrl: phone, label: cfg.b('order.require_phone') ? 'رقم الهاتف *' : 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
+                    const SizedBox(height: 12),
+                  ],
+                  if (cfg.b('order.ask_note', true)) ...[
+                    Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
+                    const SizedBox(height: 12),
+                  ],
+                  if (cfg.b('order.coupons', true) && !hide) ...[
+                    Row(children: [
+                      Expanded(child: Field(ctrl: code, label: 'كود الحسم (إن وجد)', icon: Icons.local_offer_rounded)),
+                      const SizedBox(width: 8),
+                      Pressable(
+                        onTap: checking ? null : apply,
+                        child: Container(
+                          height: 54,
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(16)),
+                          child: checking
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
+                              : Text('تطبيق', style: T.h(14, c: Colors.white)),
+                        ),
+                      ),
+                    ]),
+                    if (codeMsg != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(codeMsg!, style: T.b(12.5, c: const Color(0xFFD64545), w: FontWeight.w600))),
+                    if (coupon != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+                        decoration: BoxDecoration(color: const Color(0xFFE8F7EE), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFB6E5C8))),
+                        child: Row(children: [
+                          const Icon(Icons.check_circle_rounded, color: Color(0xFF16794A), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text('${coupon!.code} • حسم ${coupon!.label} = ${fmt.fmt(coupon!.discount)}', style: T.b(13, c: const Color(0xFF16794A), w: FontWeight.w700)),
+                          ),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => setSheet(() {
+                              coupon = null;
+                              code.clear();
+                            }),
+                            icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF16794A)),
+                          ),
+                        ]),
+                      ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (!hide && sub > 0)
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.line)),
+                      child: Column(children: [
+                        if (coupon != null) ...[
+                          Row(children: [Text('المجموع', style: T.b(13.5, c: C.muted)), const Spacer(), Text(fmt.fmt(sub), textDirection: TextDirection.ltr, style: T.b(13.5, c: C.muted))]),
+                          const SizedBox(height: 4),
+                          Row(children: [
+                            Text('الحسم', style: T.b(13.5, c: const Color(0xFF16794A), w: FontWeight.w600)),
+                            const Spacer(),
+                            Text('- ${fmt.fmt(coupon!.discount)}', textDirection: TextDirection.ltr, style: T.b(13.5, c: const Color(0xFF16794A), w: FontWeight.w700)),
+                          ]),
+                          const SizedBox(height: 6),
+                        ],
+                        Row(children: [
+                          Text('الإجمالي', style: T.h(15)),
+                          const Spacer(),
+                          Text(fmt.fmt(sub - (coupon?.discount ?? 0)), textDirection: TextDirection.ltr, style: T.h(18)),
+                        ]),
+                      ]),
+                    ),
+                  if (error != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Text(error!, style: T.b(13, c: const Color(0xFFD64545), w: FontWeight.w600)),
+                    ),
+                  WhatsAppButton(label: sending ? 'جاري تجهيز الفاتورة…' : 'أرسل الطلب عبر واتساب', onTap: sending ? () {} : send),
+                ]),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -232,24 +394,34 @@ class _CheckoutState extends State<_Checkout> {
     final items = Store.i.items;
     final bottom = MediaQuery.paddingOf(context).bottom;
     final showTotal = cfg.b('order.show_total', true) && !cfg.b('products.hide_prices') && Store.i.total > 0;
+    // Docked right above the bottom navigation bar.
     return Container(
-      margin: EdgeInsets.fromLTRB(16, 0, 16, (bottom > 0 ? bottom : 14) + 82),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(gradient: C.inkGrad, borderRadius: BorderRadius.circular(28)),
-      child: Column(children: [
-        if (showTotal) ...[
-          Row(children: [
-            Text(cfg.s('order.total_label', 'الإجمالي التقريبي'), style: T.b(13.5, c: Colors.white.withValues(alpha: 0.6))),
-            const Spacer(),
-            Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
-              Text(items.first.key.price.num_(Store.i.total), textDirection: TextDirection.ltr, style: T.h(20, c: Colors.white)),
-              const SizedBox(width: 5),
-              Text(items.first.key.price.unit, style: T.b(13, c: Colors.white.withValues(alpha: 0.7), w: FontWeight.w600)),
+      margin: EdgeInsets.fromLTRB(16, 8, 16, (bottom > 0 ? bottom : 14) + 68 + 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+      decoration: BoxDecoration(
+        gradient: C.inkGrad,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [BoxShadow(color: C.ink.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 6))],
+      ),
+      child: Row(children: [
+        if (showTotal)
+          Expanded(
+            flex: 4,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(cfg.s('order.total_label', 'الإجمالي التقريبي'), style: T.b(11.5, c: Colors.white.withValues(alpha: 0.6))),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+                  Text(items.first.key.price.num_(Store.i.total), textDirection: TextDirection.ltr, style: T.h(19, c: Colors.white)),
+                  const SizedBox(width: 4),
+                  Text(items.first.key.price.unit, style: T.b(12, c: Colors.white.withValues(alpha: 0.7), w: FontWeight.w600)),
+                ]),
+              ),
             ]),
-          ]),
-          const SizedBox(height: 14),
-        ],
-        WhatsAppButton(label: cfg.s('order.button', 'اطلب عبر واتساب'), onTap: _order),
+          ),
+        if (showTotal) const SizedBox(width: 10),
+        Expanded(flex: 6, child: WhatsAppButton(label: cfg.s('order.button', 'اطلب عبر واتساب'), onTap: _order, height: 50)),
       ]),
     );
   }
@@ -258,13 +430,14 @@ class _CheckoutState extends State<_Checkout> {
 class WhatsAppButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
-  const WhatsAppButton({super.key, required this.label, required this.onTap});
+  final double height;
+  const WhatsAppButton({super.key, required this.label, required this.onTap, this.height = 56});
   @override
   Widget build(BuildContext context) => Pressable(
         scale: 0.97,
         onTap: onTap,
         child: Container(
-          height: 56,
+          height: height,
           decoration: BoxDecoration(
             color: C.green,
             borderRadius: BorderRadius.circular(18),
@@ -273,7 +446,7 @@ class WhatsAppButton extends StatelessWidget {
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Icon(Icons.chat_rounded, color: Colors.white),
             const SizedBox(width: 10),
-            Text(label, style: T.h(15.5, c: Colors.white)),
+            Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.h(15.5, c: Colors.white))),
           ]),
         ),
       );
