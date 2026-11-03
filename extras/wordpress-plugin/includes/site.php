@@ -439,17 +439,6 @@ add_action('wp_footer', function () {
     echo '<aside class="cfx-side" dir="rtl"><a class="cfx-side-logo" href="' . esc_url(home_url('/')) . '">';
     echo $logo ? '<img src="' . esc_url($logo) . '" alt="' . esc_attr(get_bloginfo('name')) . '">' : '<img class="sq" src="' . esc_url($icon) . '" alt="">';
     echo '</a><nav class="cfx-side-nav">' . $render('cfx-side-i') . '</nav>';
-    $menu = '';
-    $locs = get_nav_menu_locations();
-    foreach (array('menu_1', 'primary', 'menu_mobile', 'header-menu') as $loc) {
-        if (!empty($locs[$loc])) {
-            $menu = wp_nav_menu(array('theme_location' => $loc, 'container' => false, 'menu_class' => 'cfx-side-menu', 'depth' => 2, 'echo' => false, 'fallback_cb' => false));
-            break;
-        }
-    }
-    if ($menu) {
-        echo '<div class="cfx-side-sep"></div>' . $menu;
-    }
     $wa = preg_replace('/\D+/', '', $c['contact']['whatsapp_support']);
     if ($wa) {
         echo '<a class="cfx-side-wa" target="_blank" rel="noopener" href="https://wa.me/' . esc_attr($wa) . '">' . cfx_svg('chat', 20) . '<span>تواصل واتساب</span></a>';
@@ -508,4 +497,37 @@ add_action('wp_body_open', function () {
         echo '<form class="cfx-mhead-search" role="search" method="get" action="' . esc_url(home_url('/')) . '"><span>' . '<svg class="cfx-i" viewBox="0 0 24 24" width="22" height="22"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>' . '</span><input type="search" name="s" value="' . esc_attr(get_search_query()) . '" placeholder="' . esc_attr($c['general']['search_hint']) . '"><input type="hidden" name="post_type" value="product"></form>';
     }
     echo '</div>';
+}, 5);
+
+/* ------------------------------------------------------------------ */
+/* Shop page = app "الأقسام" screen: category tiles above the products */
+/* ------------------------------------------------------------------ */
+add_action('woocommerce_before_shop_loop', function () {
+    if (!cfx_site_on() || !is_shop() || is_search() || get_query_var('paged') > 1) {
+        return;
+    }
+    $c = coofix_app_get_config();
+    $terms = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => true, 'parent' => 0));
+    if (is_wp_error($terms) || !$terms) {
+        return;
+    }
+    $hidden = array_map('intval', (array) $c['categories']['hidden']);
+    $order = array_map('intval', (array) $c['categories']['order']);
+    $terms = array_values(array_filter($terms, function ($t) use ($hidden) {
+        return $t->slug !== 'uncategorized' && !in_array($t->term_id, $hidden, true);
+    }));
+    usort($terms, function ($a, $b) use ($order) {
+        $ia = array_search($a->term_id, $order, true);
+        $ib = array_search($b->term_id, $order, true);
+        return ($ia === false ? 999 : $ia) - ($ib === false ? 999 : $ib);
+    });
+    $every = max(0, intval($c['categories']['dark_every']));
+    echo '<div class="cfx-catlist" dir="rtl">';
+    foreach ($terms as $i => $t) {
+        $nm = isset($c['categories']['names'][$t->term_id]) && $c['categories']['names'][$t->term_id] !== '' ? $c['categories']['names'][$t->term_id] : $t->name;
+        $dark = $every > 0 && $i % $every === 0;
+        $ic = cfx_cat_icon_key($t, $c);
+        echo '<a class="cfx-ctile' . ($dark ? ' is-dark' : '') . '" href="' . esc_url(get_term_link($t)) . '"><span class="cfx-ctile-ghost">' . cfx_svg($ic, 150) . '</span><span class="cfx-ctile-ico">' . cfx_svg($ic, 34) . '</span><span class="cfx-ctile-txt"><strong>' . esc_html($nm) . '</strong><small>' . intval($t->count) . ' منتج</small></span><span class="cfx-ctile-go">' . cfx_svg('arrow', 20) . '</span></a>';
+    }
+    echo '</div><div class="cfx-sec-head cfx-shop-head"><div><h2>كل المنتجات</h2></div></div>';
 }, 5);

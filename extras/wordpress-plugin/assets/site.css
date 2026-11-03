@@ -349,3 +349,47 @@ body.cfx-home article > .entry-content{margin-top:0!important}
   .cfx-side-wa{margin-top:18px}
   body.cfx-skin footer.ct-footer{margin-left:12px;margin-right:0}
 }
+
+/* ---------- v1.4.3 fixes ---------- */
+body.cfx-skin .cfx-mhead-search input[type=search]{border:0!important;background:transparent!important;box-shadow:none!important;min-height:50px!important;padding:0!important}
+/* Page titles live in the app header now */
+body.cfx-skin .hero-section{display:none!important}
+body.cfx-skin.single-product .hero-section{display:none!important}
+body.cfx-skin #main > .ct-container,body.cfx-skin #main .ct-container-full{padding-top:14px!important}
+body.cfx-skin .woocommerce-result-count{display:none!important}
+body.cfx-skin .woocommerce-ordering{margin-bottom:14px!important}
+body.cfx-skin .woocommerce-ordering select{min-height:42px!important;border-radius:14px!important;padding:0 14px!important;font-size:13.5px!important;background-color:#fff!important}
+/* Loop add-to-cart like the app (dark) */
+body.cfx-skin ul.products li.product .button,body.cfx-skin ul.products li.product .add_to_cart_button{background:var(--cfx-ink)!important;color:#fff!important;box-shadow:none!important;min-height:42px!important;border-radius:14px!important;font-size:13.5px!important;width:100%}
+body.cfx-skin ul.products li.product .button:hover{background:var(--cfx-amber)!important;color:var(--cfx-ink)!important}
+body.cfx-skin ul.products li.product .woocommerce-loop-product__title{font-size:14.5px!important}
+/* Category tiles (shop page) */
+.cfx-catlist{display:grid;gap:12px;margin:4px 0 6px}
+.cfx-ctile{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;min-height:112px;padding:18px;border-radius:26px;background:#fff;border:1px solid var(--cfx-line);text-decoration:none!important;color:var(--cfx-text)!important;transition:transform .25s,box-shadow .25s}
+.cfx-ctile:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(6,25,34,.1)}
+.cfx-ctile.is-dark{background:var(--cfx-inkgrad);border-color:transparent;color:#fff!important}
+.cfx-ctile-ghost{position:absolute;inset-inline-end:-18px;bottom:-30px;opacity:.06;color:currentColor}
+.cfx-ctile-ico{width:70px;height:70px;flex:none;border-radius:22px;display:grid;place-items:center;background:var(--cfx-bg);color:var(--cfx-amber)}
+.cfx-ctile.is-dark .cfx-ctile-ico{background:rgba(255,255,255,.08)}
+.cfx-ctile-txt{flex:1;display:flex;flex-direction:column;gap:2px}
+.cfx-ctile-txt strong{font-family:var(--cfx-head);font-size:18px}
+.cfx-ctile-txt small{font-size:13px;color:var(--cfx-muted)}
+.cfx-ctile.is-dark small{color:rgba(255,255,255,.55)}
+.cfx-ctile-go{width:42px;height:42px;flex:none;border-radius:14px;display:grid;place-items:center;background:var(--cfx-ink);color:#fff;transform:scaleX(-1)}
+.cfx-ctile.is-dark .cfx-ctile-go{background:var(--cfx-amber);color:var(--cfx-ink)}
+.cfx-shop-head{margin-top:26px!important}
+@media (min-width:768px){.cfx-catlist{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1200px){.cfx-catlist{grid-template-columns:repeat(3,1fr)}}
+body.cfx-skin.cfx-skin ul.products li.product a.button,body.cfx-skin.cfx-skin ul.products li.product a.add_to_cart_button{background:var(--cfx-ink)!important;background-image:none!important;color:#fff!important;box-shadow:none!important}
+body.cfx-skin.cfx-skin ul.products li.product a.button:hover{background:var(--cfx-amber)!important;color:var(--cfx-ink)!important}
+/* Shop like the app: no sidebar, full-width grid */
+body.cfx-skin.woocommerce-shop aside#sidebar,body.cfx-skin.tax-product_cat aside#sidebar,body.cfx-skin.post-type-archive-product aside#sidebar{display:none!important}
+body.cfx-skin.woocommerce-shop .ct-container[data-sidebar],body.cfx-skin.tax-product_cat .ct-container[data-sidebar],body.cfx-skin.post-type-archive-product .ct-container[data-sidebar]{grid-template-columns:1fr!important;display:block!important}
+@media (min-width:1000px){body.cfx-skin.cfx-skin ul.products{grid-template-columns:repeat(4,1fr)!important}}
+@media (max-width:999px){body.cfx-skin.cfx-skin ul.products{grid-template-columns:repeat(2,1fr)!important}}
+@media (min-width:1000px){
+  body.cfx-skin #main > .ct-container,body.cfx-skin #main .ct-container[data-sidebar],body.cfx-skin #main > div > .ct-container{max-width:1280px!important;width:auto!important;margin-inline:auto!important;padding-inline:32px!important}
+}
+@media (max-width:999px){
+  body.cfx-skin #main > .ct-container,body.cfx-skin #main > div > .ct-container{padding-inline:16px!important;width:auto!important}
+}
