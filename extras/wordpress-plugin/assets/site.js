@@ -69,3 +69,10 @@
     });
   }, { passive: true });
 })();
+
+/* Product page: put the specs section inside the product layout (under the image on desktop) */
+(function () {
+  var t = document.querySelector('.single-product .woocommerce-tabs');
+  var w = document.querySelector('.single-product .product-entry-wrapper');
+  if (t && w) { w.appendChild(t); t.classList.add('cfx-in-wrap'); }
+})();

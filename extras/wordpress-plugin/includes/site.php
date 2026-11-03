@@ -541,11 +541,7 @@ add_filter('woocommerce_product_tabs', function ($tabs) {
         $tabs['additional_information']['title'] = 'المواصفات الفنية';
         $tabs['additional_information']['priority'] = 5;
     }
-    if (isset($tabs['description'])) {
-        $tabs['description']['title'] = 'وصف المنتج';
-        $tabs['description']['priority'] = 10;
-    }
-    unset($tabs['reviews']);
+    unset($tabs['description'], $tabs['reviews']);
     return $tabs;
 }, 99);
 add_filter('woocommerce_product_additional_information_heading', function ($h) { return cfx_site_on() ? 'المواصفات الفنية' : $h; });
@@ -589,4 +585,28 @@ add_action('wp', function () {
         }
         echo '</div>';
     }, 40);
+});
+
+// Product page extras: badges above the title + quick info under the cart button.
+add_action('woocommerce_single_product_summary', function () {
+    global $product;
+    if (!cfx_site_on() || !$product) {
+        return;
+    }
+    $in = $product->is_in_stock();
+    echo '<div class="cfx-pbadges">'
+        . '<span class="cfx-pb cfx-pb-brand">' . cfx_svg('verified', 15) . 'أصلي من كوفيكس</span>'
+        . '<span class="cfx-pb ' . ($in ? 'cfx-pb-in' : 'cfx-pb-out') . '"><i></i>' . ($in ? 'متوفر' : 'غير متوفر حالياً') . '</span>'
+        . ($product->is_on_sale() ? '<span class="cfx-pb cfx-pb-sale">عرض خاص</span>' : '')
+        . '</div>';
+}, 4);
+add_action('woocommerce_after_add_to_cart_form', function () {
+    if (!cfx_site_on()) {
+        return;
+    }
+    echo '<ul class="cfx-pinfo">'
+        . '<li>' . cfx_svg('chat', 16) . 'طلب سريع عبر واتساب</li>'
+        . '<li>' . cfx_svg('handshake', 16) . 'الدفع عند الاستلام</li>'
+        . '<li>' . cfx_svg('build', 16) . 'صيانة معتمدة بعد البيع</li>'
+        . '</ul>';
 });
