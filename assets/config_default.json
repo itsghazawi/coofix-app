@@ -1,0 +1,307 @@
+{
+    "meta": {
+        "updated": 0
+    },
+    "general": {
+        "app_name": "كوفيكس سوريا",
+        "tagline": "الوكيل الحصري والرسمي في سوريا",
+        "welcome_small": "أهلاً بك في",
+        "welcome_big": "كوفيكس سوريا",
+        "search_hint": "ابحث عن مثقب، جلاخة، كمبريسور...",
+        "maintenance": {
+            "enabled": false,
+            "title": "التطبيق قيد التحديث",
+            "message": "نعمل على تحسين تجربتك، سنعود خلال وقت قصير. يمكنك التواصل معنا عبر واتساب."
+        },
+        "update": {
+            "min_version": "1.0.0",
+            "latest_version": "1.0.0",
+            "force": false,
+            "title": "تحديث جديد متوفر",
+            "message": "نسخة جديدة من التطبيق بميزات وتحسينات جديدة.",
+            "android_url": "",
+            "ios_url": ""
+        }
+    },
+    "brand": {
+        "primary": "#FAA21B",
+        "primary_light": "#FFC14F",
+        "primary_deep": "#E08A00",
+        "dark": "#061922",
+        "dark_light": "#0F3041",
+        "background": "#F4F3F0",
+        "text": "#15181D",
+        "logo_url": "",
+        "icon_url": "",
+        "splash_title": "COOFIX",
+        "splash_sub": "كوفيكس سوريا",
+        "splash_note": "الوكيل الحصري والرسمي في سوريا",
+        "splash_seconds": 2.6,
+        "corner_radius": 24
+    },
+    "announcement": {
+        "enabled": false,
+        "text": "🔥 خصومات حتى 20% على عدد البطارية",
+        "bg": "#061922",
+        "fg": "#FFFFFF",
+        "action_type": "none",
+        "action_value": ""
+    },
+    "popup": {
+        "enabled": false,
+        "id": "welcome-1",
+        "title": "أهلاً بك في تطبيق كوفيكس",
+        "body": "تصفّح العدد الأصلية واطلب مباشرة عبر واتساب.",
+        "image": "",
+        "button": "تسوّق الآن",
+        "action_type": "tab",
+        "action_value": "categories",
+        "every_launch": false
+    },
+    "banners": [
+        {
+            "enabled": true,
+            "image": "",
+            "style": "dark",
+            "icon": "bolt",
+            "kicker": "الوكيل الحصري",
+            "title": "قوة احترافية\nبين يديك",
+            "subtitle": "عدد كوفيكس الأصلية بكفالة 6 أشهر",
+            "cta": "تسوّق الآن",
+            "action_type": "tab",
+            "action_value": "categories"
+        },
+        {
+            "enabled": true,
+            "image": "",
+            "style": "accent",
+            "icon": "battery",
+            "kicker": "حرية بلا أسلاك",
+            "title": "عدد البطارية\nبتقنية الليثيوم",
+            "subtitle": "منصة 20V واحدة لكل عدتك",
+            "cta": "اكتشف التشكيلة",
+            "action_type": "search",
+            "action_value": "شحن"
+        },
+        {
+            "enabled": true,
+            "image": "",
+            "style": "dark2",
+            "icon": "storefront",
+            "kicker": "للتجار والورش",
+            "title": "أسعار خاصة\nلطلبات الجملة",
+            "subtitle": "تواصل مع فريق المبيعات مباشرة",
+            "cta": "راسلنا واتساب",
+            "action_type": "whatsapp",
+            "action_value": "مرحباً، أرغب بالاستفسار عن أسعار الجملة للتجار."
+        }
+    ],
+    "banner_seconds": 5,
+    "banner_height": 196,
+    "home": {
+        "sections": [
+            {
+                "key": "announcement",
+                "enabled": true,
+                "title": "",
+                "subtitle": ""
+            },
+            {
+                "key": "hero",
+                "enabled": true,
+                "title": "",
+                "subtitle": ""
+            },
+            {
+                "key": "categories",
+                "enabled": true,
+                "title": "تسوّق حسب القسم",
+                "subtitle": ""
+            },
+            {
+                "key": "deals",
+                "enabled": true,
+                "title": "عروض حصرية",
+                "subtitle": "خصومات لفترة محدودة"
+            },
+            {
+                "key": "values",
+                "enabled": true,
+                "title": "",
+                "subtitle": ""
+            },
+            {
+                "key": "latest",
+                "enabled": false,
+                "title": "وصل حديثاً",
+                "subtitle": "أحدث المنتجات في المتجر"
+            },
+            {
+                "key": "featured",
+                "enabled": true,
+                "title": "الأكثر طلباً",
+                "subtitle": "اختيارات المحترفين في الورش"
+            },
+            {
+                "key": "maintenance",
+                "enabled": true,
+                "title": "مركز الصيانة المعتمد",
+                "subtitle": "اطلب صيانة لعدّتك خلال دقيقة واحدة"
+            }
+        ]
+    },
+    "categories": {
+        "order": [],
+        "hidden": [],
+        "icons": [],
+        "names": [],
+        "dark_every": 3
+    },
+    "products": {
+        "use_demo": true,
+        "min_catalogue": 8,
+        "featured_mode": "featured",
+        "featured_ids": [],
+        "featured_count": 8,
+        "latest_count": 8,
+        "show_out_of_stock": true,
+        "hide_prices": false,
+        "hidden_price_text": "اطلب السعر",
+        "currency_label": "",
+        "show_old_price": true,
+        "show_discount": true,
+        "show_sku": true,
+        "show_specs": true,
+        "show_related": true,
+        "parse_specs_from_description": true,
+        "allow_cart": true,
+        "perks": [
+            {
+                "icon": "shield",
+                "title": "كفالة",
+                "sub": "6 أشهر"
+            },
+            {
+                "icon": "verified",
+                "title": "أصلي",
+                "sub": "100%"
+            },
+            {
+                "icon": "truck",
+                "title": "توصيل",
+                "sub": "لكل المحافظات"
+            }
+        ],
+        "ask_text": "عندك سؤال؟ اسأل خبير كوفيكس على واتساب"
+    },
+    "contact": {
+        "whatsapp_orders": "963955791888",
+        "whatsapp_support": "963955791888",
+        "whatsapp_maintenance": "963955791888",
+        "phone": "963955791888",
+        "email": "",
+        "website": "https:\/\/www.coofix.sy",
+        "catalogue_url": "https:\/\/www.coofix.sy",
+        "address": "",
+        "maps_url": "",
+        "hours": "",
+        "socials": {
+            "facebook": "",
+            "instagram": "",
+            "tiktok": "",
+            "telegram": "",
+            "youtube": ""
+        }
+    },
+    "order": {
+        "button": "اطلب عبر واتساب",
+        "sheet_title": "إتمام الطلب",
+        "sheet_note": "سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.",
+        "header": "مرحباً كوفيكس سوريا 👋\nأرغب بطلب المنتجات التالية من التطبيق:",
+        "footer": "شكراً لكم.",
+        "show_total": true,
+        "total_label": "الإجمالي التقريبي",
+        "ask_name": true,
+        "ask_city": true,
+        "ask_phone": false,
+        "ask_note": true,
+        "require_name": false,
+        "require_city": false,
+        "require_phone": false
+    },
+    "pages": {
+        "values": [
+            {
+                "icon": "verified",
+                "title": "جودة أصلية",
+                "sub": "منتجات معتمدة من الشركة الأم"
+            },
+            {
+                "icon": "shield",
+                "title": "كفالة 6 أشهر",
+                "sub": "صيانة وقطع غيار مضمونة"
+            },
+            {
+                "icon": "handshake",
+                "title": "نرحّب بالتجار",
+                "sub": "أسعار جملة وشراكات"
+            }
+        ],
+        "about_title": "من نحن",
+        "about_body": "كوفيكس سوريا هي الوكيل الحصري والرسمي لعلامة كوفيكس في سوريا. نوفّر تشكيلة متكاملة من العدد الكهربائية وعدد البطارية والوقود والهواء والعدد اليدوية مع كفالة حقيقية ومركز صيانة معتمد وقطع غيار أصلية.\n\nنرحّب بالتجار والموزعين في جميع المحافظات، ونقدّم أسعاراً خاصة للجملة.",
+        "warranty_title": "كفالة 6 أشهر",
+        "warranty_points": [
+            {
+                "title": "مدة الكفالة",
+                "body": "ستة أشهر من تاريخ الشراء على جميع عدد كوفيكس الأصلية."
+            },
+            {
+                "title": "ما تشمله",
+                "body": "عيوب التصنيع والأعطال الفنية الناتجة عن الاستخدام الطبيعي."
+            },
+            {
+                "title": "ما لا تشمله",
+                "body": "سوء الاستخدام، الكسر، والقطع الاستهلاكية كالفحمات والشفرات."
+            },
+            {
+                "title": "كيف تستفيد",
+                "body": "احتفظ بفاتورة الشراء وتواصل مع مركز الصيانة عبر التطبيق."
+            }
+        ],
+        "maintenance_title": "طلب صيانة",
+        "maintenance_intro": "عبّئ البيانات وسيتواصل معك فريق الصيانة المعتمد لتحديد موعد الاستلام.",
+        "trader_message": "مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة لدى كوفيكس سوريا.",
+        "search_suggestions": [
+            "مثقب",
+            "جلاخة",
+            "شحن",
+            "كمبريسور",
+            "منشار",
+            "مولدة",
+            "طقم"
+        ],
+        "stats_products_label": "منتج",
+        "footer_note": "الإصدار 1.0.0",
+        "more_items": {
+            "maintenance": true,
+            "warranty": true,
+            "catalogue": true,
+            "traders": true,
+            "whatsapp": true,
+            "call": true,
+            "website": true,
+            "email": true,
+            "location": true,
+            "socials": true,
+            "about": true
+        }
+    },
+    "nav": {
+        "home": "الرئيسية",
+        "categories": "الأقسام",
+        "cart": "السلة",
+        "favorites": "المفضلة",
+        "more": "المزيد",
+        "show_favorites": true
+    }
+}

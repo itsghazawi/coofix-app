@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'api.dart';
+import 'config.dart';
 import 'models.dart';
 
 /// Cart + favourites, persisted on device.
@@ -69,8 +70,8 @@ class Store extends ChangeNotifier {
   }
 }
 
-Future<void> openWhatsApp(String text) async {
-  final uri = Uri.parse('https://wa.me/${Config.whatsapp}?text=${Uri.encodeComponent(text)}');
+Future<void> openWhatsApp(String text, {String? number}) async {
+  final uri = Uri.parse('https://wa.me/${number ?? Config.whatsapp}?text=${Uri.encodeComponent(text)}');
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
@@ -78,19 +79,27 @@ Future<void> openUrl(String url) async {
   await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 }
 
-String orderMessage(List<MapEntry<Product, int>> items, num total, Price? fmt, {String? name, String? city, String? note}) {
-  final b = StringBuffer('مرحباً كوفيكس سوريا 👋\nأرغب بطلب المنتجات التالية من التطبيق:\n\n');
+String orderMessage(List<MapEntry<Product, int>> items, num total, Price? fmt, {String? name, String? city, String? phone, String? note}) {
+  final cfg = Cfg.i;
+  final b = StringBuffer();
+  final header = cfg.s('order.header', 'مرحباً كوفيكس سوريا 👋\nأرغب بطلب المنتجات التالية من التطبيق:');
+  if (header.isNotEmpty) b.write('$header\n\n');
+  final hide = cfg.b('products.hide_prices');
   var i = 1;
   for (final e in items) {
     b.writeln('$i) ${e.key.name}');
     if (e.key.sku.isNotEmpty) b.writeln('   الرمز: ${e.key.sku}');
-    b.writeln('   الكمية: ${e.value} × ${e.key.price.fmt(e.key.price.price)}');
+    b.writeln(hide || e.key.price.price <= 0 ? '   الكمية: ${e.value}' : '   الكمية: ${e.value} × ${e.key.price.fmt(e.key.price.price)}');
     i++;
   }
-  if (fmt != null) b.writeln('\nالإجمالي التقريبي: ${fmt.fmt(total)}');
+  if (fmt != null && !hide && cfg.b('order.show_total', true) && total > 0) {
+    b.writeln('\n${cfg.s('order.total_label', 'الإجمالي التقريبي')}: ${fmt.fmt(total)}');
+  }
   if (name != null && name.isNotEmpty) b.writeln('الاسم: $name');
   if (city != null && city.isNotEmpty) b.writeln('المدينة: $city');
+  if (phone != null && phone.isNotEmpty) b.writeln('الهاتف: $phone');
   if (note != null && note.isNotEmpty) b.writeln('ملاحظات: $note');
-  b.write('\nشكراً لكم.');
-  return b.toString();
+  final footer = cfg.s('order.footer', 'شكراً لكم.');
+  if (footer.isNotEmpty) b.write('\n$footer');
+  return b.toString().trim();
 }

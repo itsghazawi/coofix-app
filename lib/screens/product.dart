@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
+import '../data/icons.dart';
 import '../data/models.dart';
 import '../data/store.dart';
 import '../theme.dart';
@@ -26,6 +28,10 @@ class _ProductScreenState extends State<ProductScreen> {
     final bottom = MediaQuery.paddingOf(context).bottom;
     final related = Api.i.products.where((x) => x.id != p.id && x.categoryName == p.categoryName).take(6).toList();
     final imgs = p.images;
+    final cart = Cfg.i.b('products.allow_cart', true);
+    final parse = Cfg.i.b('products.parse_specs_from_description', true);
+    final specs = Cfg.i.b('products.show_specs', true) ? p.specsWith(parseDescription: parse) : const <MapEntry<String, String>>[];
+    final about = parse && specs.isNotEmpty ? p.aboutWithoutSpecs(_about(p)) : _about(p);
     return Scaffold(
       backgroundColor: C.bg,
       body: Stack(children: [
@@ -84,7 +90,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       Row(children: [
                         if (p.categoryName.isNotEmpty) Badge2(p.categoryName, bg: C.ink, fg: Colors.white),
                         const SizedBox(width: 8),
-                        if (p.price.onSale) Badge2('وفّر ${p.price.discountPct}%'),
+                        if (p.price.onSale && Cfg.i.b('products.show_discount', true) && !Cfg.i.b('products.hide_prices')) Badge2('وفّر ${p.price.discountPct}%'),
                         const Spacer(),
                         Row(children: [
                           Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: p.inStock ? const Color(0xFF2BB673) : C.muted)),
@@ -94,7 +100,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       ]),
                       const SizedBox(height: 14),
                       Text(p.name, style: T.h(23, height: 1.4)),
-                      if (p.sku.isNotEmpty) ...[
+                      if (p.sku.isNotEmpty && Cfg.i.b('products.show_sku', true)) ...[
                         const SizedBox(height: 6),
                         Text('رمز المنتج: ${p.sku}', style: T.b(12.5, c: C.muted)),
                       ],
@@ -102,22 +108,22 @@ class _ProductScreenState extends State<ProductScreen> {
                       PriceView(p.price, size: 24, color: C.ink),
                       const SizedBox(height: 22),
                       const _Perks(),
-                      if (p.specs.isNotEmpty) ...[
+                      if (specs.isNotEmpty) ...[
                         const SizedBox(height: 26),
                         Text('المواصفات الفنية', style: T.h(17)),
                         const SizedBox(height: 12),
-                        _Specs(p.specs),
+                        _Specs(specs),
                       ],
-                      if (p.shortDesc.isNotEmpty || p.desc.isNotEmpty) ...[
+                      if (about.isNotEmpty) ...[
                         const SizedBox(height: 26),
                         Text('عن المنتج', style: T.h(17)),
                         const SizedBox(height: 10),
-                        Text(_about(p), style: T.b(14.5, c: const Color(0xFF4A4F57), height: 1.85)),
+                        Text(about, style: T.b(14.5, c: const Color(0xFF4A4F57), height: 1.85)),
                       ],
                       const SizedBox(height: 18),
                       Pressable(
                         scale: 0.98,
-                        onTap: () => openWhatsApp('مرحباً، لدي استفسار عن المنتج: ${p.name}${p.sku.isNotEmpty ? ' (${p.sku})' : ''}'),
+                        onTap: () => openWhatsApp('مرحباً، لدي استفسار عن المنتج: ${p.name}${p.sku.isNotEmpty ? ' (${p.sku})' : ''}', number: Config.whatsappSupport),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -128,7 +134,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           child: Row(children: [
                             const Icon(Icons.chat_rounded, color: Color(0xFF1DA851)),
                             const SizedBox(width: 12),
-                            Expanded(child: Text('عندك سؤال؟ اسأل خبير كوفيكس على واتساب', style: T.b(14, w: FontWeight.w600, c: const Color(0xFF147A3B)))),
+                            Expanded(child: Text(Cfg.i.s('products.ask_text', 'عندك سؤال؟ اسأل خبير كوفيكس على واتساب'), style: T.b(14, w: FontWeight.w600, c: const Color(0xFF147A3B)))),
                             const Icon(Icons.arrow_forward_rounded, color: Color(0xFF1DA851), size: 20),
                           ]),
                         ),
@@ -138,7 +144,7 @@ class _ProductScreenState extends State<ProductScreen> {
                 ),
               ),
             ),
-            if (related.isNotEmpty) ...[
+            if (related.isNotEmpty && Cfg.i.b('products.show_related', true)) ...[
               const SliverToBoxAdapter(child: SectionHeader('منتجات مشابهة')),
               SliverToBoxAdapter(
                 child: SizedBox(
@@ -190,12 +196,18 @@ class _ProductScreenState extends State<ProductScreen> {
               boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 30, offset: const Offset(0, -6))],
             ),
             child: Row(children: [
-              _Qty(qty: qty, onChange: (v) => setState(() => qty = v)),
-              const SizedBox(width: 12),
+              if (cart) ...[
+                _Qty(qty: qty, onChange: (v) => setState(() => qty = v)),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: Pressable(
                   scale: 0.97,
                   onTap: () {
+                    if (!cart) {
+                      openWhatsApp(orderMessage([MapEntry(p, 1)], p.price.price, p.price));
+                      return;
+                    }
                     Store.i.add(p, qty);
                     toast(context, 'تمت إضافة $qty إلى السلة', icon: Icons.shopping_bag_rounded);
                   },
@@ -207,9 +219,9 @@ class _ProductScreenState extends State<ProductScreen> {
                       boxShadow: [BoxShadow(color: C.accent.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8))],
                     ),
                     child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.shopping_bag_rounded, color: C.ink, size: 21),
+                      Icon(cart ? Icons.shopping_bag_rounded : Icons.chat_rounded, color: C.on(C.accent), size: 21),
                       const SizedBox(width: 10),
-                      Text('أضف إلى السلة', style: T.h(15.5, c: C.ink)),
+                      Text(cart ? 'أضف إلى السلة' : Cfg.i.s('order.button', 'اطلب عبر واتساب'), style: T.h(15.5, c: C.on(C.accent))),
                     ]),
                   ),
                 ),
@@ -239,8 +251,9 @@ String _about(Product p) {
 class _RoundBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
-  final Color color;
-  const _RoundBtn({required this.icon, required this.onTap, this.color = C.text});
+  final Color? _color;
+  Color get color => _color ?? C.text;
+  const _RoundBtn({required this.icon, required this.onTap, Color? color}) : _color = color;
   @override
   Widget build(BuildContext context) => Pressable(
         scale: 0.88,
@@ -293,11 +306,8 @@ class _Perks extends StatelessWidget {
   const _Perks();
   @override
   Widget build(BuildContext context) {
-    const perks = [
-      (Icons.shield_rounded, 'كفالة', '6 أشهر'),
-      (Icons.verified_rounded, 'أصلي', '100%'),
-      (Icons.local_shipping_rounded, 'توصيل', 'لكل المحافظات'),
-    ];
+    final perks = Cfg.i.list('products.perks').map((v) => (iconByKey('${v['icon']}', Icons.verified_rounded), '${v['title'] ?? ''}', '${v['sub'] ?? ''}')).toList();
+    if (perks.isEmpty) return const SizedBox.shrink();
     return Row(children: [
       for (var i = 0; i < perks.length; i++) ...[
         if (i > 0) const SizedBox(width: 10),

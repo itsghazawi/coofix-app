@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/config.dart';
 import '../data/icons.dart';
 import '../data/models.dart';
 import '../theme.dart';
@@ -43,7 +44,7 @@ class _PressableState extends State<Pressable> {
   }
 }
 
-IconData categoryIcon(String slug, [String name = '']) => categoryIconFor(slug, name);
+IconData categoryIcon(String slug, [String name = '', int? id]) => categoryIconFor(slug, name, id);
 
 /// Network image with a branded placeholder (used when a product has no photo yet).
 class ProductImage extends StatelessWidget {
@@ -57,7 +58,7 @@ class ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final src = url ?? p.cover;
-    final ph = _Placeholder(icon: categoryIcon(p.categories.isEmpty ? '' : p.categories.first.slug, p.categoryName), size: iconSize);
+    final ph = _Placeholder(icon: categoryIcon(p.categories.isEmpty ? '' : p.categories.first.slug, p.categoryName, p.categories.isEmpty ? null : p.categories.first.id), size: iconSize);
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: Container(
@@ -171,21 +172,35 @@ class _ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
 class PriceView extends StatelessWidget {
   final Price price;
   final double size;
-  final Color color;
+  final Color? _color;
+  Color get color => _color ?? C.text;
   final bool compact;
-  const PriceView(this.price, {super.key, this.size = 16, this.color = C.text, this.compact = false});
+  const PriceView(this.price, {super.key, this.size = 16, Color? color, this.compact = false}) : _color = color;
 
   @override
   Widget build(BuildContext context) {
-    if (price.price <= 0) {
-      return Text('اطلب السعر', style: T.h(size * 0.9, c: C.accent));
+    final cfg = Cfg.i;
+    if (cfg.b('products.hide_prices') || price.price <= 0) {
+      return Text(cfg.s('products.hidden_price_text', 'اطلب السعر'), style: T.h(size * 0.85, c: C.accentDeep));
     }
-    final main = Text(price.fmt(price.price), style: T.h(size, c: color, w: FontWeight.w700));
-    if (!price.onSale) return main;
-    final old = Text(
-      price.fmt(price.regular),
-      style: T.b(size * 0.72, c: C.muted).copyWith(decoration: TextDecoration.lineThrough, decorationColor: C.muted),
-    );
+    Widget amount(num v, double sz, Color col, {bool strike = false}) {
+      final deco = strike ? TextDecoration.lineThrough : null;
+      return FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.baseline, textBaseline: TextBaseline.alphabetic, children: [
+          Text(price.num_(v),
+              textDirection: TextDirection.ltr,
+              style: (strike ? T.b(sz, c: col) : T.h(sz, c: col, w: FontWeight.w700)).copyWith(decoration: deco, decorationColor: col)),
+          const SizedBox(width: 4),
+          Text(price.unit, style: T.b(sz * 0.62, c: strike ? col : col.withValues(alpha: 0.7), w: FontWeight.w600).copyWith(decoration: deco, decorationColor: col)),
+        ]),
+      );
+    }
+
+    final main = amount(price.price, size, color);
+    if (!price.onSale || !cfg.b('products.show_old_price', true)) return main;
+    final old = amount(price.regular, size * 0.72, C.muted, strike: true);
     return compact
         ? Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [old, main])
         : Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 10, children: [main, old]);
@@ -228,7 +243,7 @@ class SectionHeader extends StatelessWidget {
               child: Row(children: [
                 Text(action!, style: T.b(13.5, w: FontWeight.w600, c: C.accent)),
                 const SizedBox(width: 2),
-                const Icon(Icons.chevron_right_rounded, color: C.accent, size: 20),
+                Icon(Icons.chevron_right_rounded, color: C.accent, size: 20),
               ]),
             ),
         ],
@@ -239,9 +254,11 @@ class SectionHeader extends StatelessWidget {
 
 class Badge2 extends StatelessWidget {
   final String text;
-  final Color bg;
-  final Color fg;
-  const Badge2(this.text, {super.key, this.bg = C.accent, this.fg = C.ink});
+  final Color? _bg;
+  final Color? _fg;
+  Color get bg => _bg ?? C.accent;
+  Color get fg => _fg ?? C.on(bg);
+  const Badge2(this.text, {super.key, Color? bg, Color? fg}) : _bg = bg, _fg = fg;
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),

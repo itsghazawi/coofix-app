@@ -1,12 +1,18 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:flutter/material.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
+import '../data/icons.dart';
 import '../data/models.dart';
 import '../data/store.dart';
 import '../theme.dart';
+import '../widgets/actions.dart';
 import '../widgets/brand.dart';
+import '../widgets/notices.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
 import 'categories.dart';
@@ -29,43 +35,62 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final api = Api.i;
-    final deals = api.deals;
+    final cfg = Cfg.i;
+    String t(Map<String, dynamic> s, String def) => (s['title'] ?? '').toString().trim().isEmpty ? def : '${s['title']}';
+    String? sub(Map<String, dynamic> s) => (s['subtitle'] ?? '').toString().trim().isEmpty ? null : '${s['subtitle']}';
+    Widget grid(List<Product> items, String tag) => SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, mainAxisExtent: 292),
+            delegate: SliverChildBuilderDelegate((c, i) => Reveal(index: i, child: ProductCard(items[i], heroTag: tag)), childCount: items.length),
+          ),
+        );
+
+    final slivers = <Widget>[const SliverToBoxAdapter(child: _Header())];
+    var sections = cfg.homeSections;
+    if (sections.isEmpty) {
+      sections = [for (final k in ['hero', 'categories', 'deals', 'values', 'featured', 'maintenance']) {'key': k, 'enabled': true}];
+    }
+    for (final sec in sections) {
+      if (sec['enabled'] == false) continue;
+      switch (sec['key']) {
+        case 'announcement':
+          slivers.add(const SliverToBoxAdapter(child: AnnouncementBar()));
+        case 'hero':
+          if (_HeroCarouselState.slides.isNotEmpty) slivers.add(const SliverToBoxAdapter(child: _HeroCarousel()));
+        case 'categories':
+          if (api.categories.isEmpty) break;
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'تسوّق حسب القسم'), subtitle: sub(sec), action: 'الكل', onAction: () => Shell.of(context)?.goKey('categories'))));
+          slivers.add(SliverToBoxAdapter(child: _CategoryStrip(api.categories)));
+        case 'deals':
+          final deals = api.deals;
+          if (deals.isEmpty) break;
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'عروض حصرية'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(deals, tag: 'deal')));
+        case 'values':
+          slivers.add(const SliverToBoxAdapter(child: _Values()));
+        case 'latest':
+          final l = api.latest;
+          if (l.isEmpty) break;
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'وصل حديثاً'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(l, tag: 'new')));
+        case 'featured':
+          final f = api.featured;
+          if (f.isEmpty) break;
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'الأكثر طلباً'), subtitle: sub(sec))));
+          slivers.add(grid(f, 'feat'));
+        case 'maintenance':
+          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'اطلب صيانة لعدّتك خلال دقيقة واحدة')));
+      }
+    }
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
+
     return RefreshIndicator(
       color: C.accent,
       onRefresh: _refresh,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          const SliverToBoxAdapter(child: _Header()),
-          const SliverToBoxAdapter(child: _HeroCarousel()),
-          SliverToBoxAdapter(
-            child: SectionHeader('تسوّق حسب القسم', action: 'الكل', onAction: () => Shell.of(context)?.go(1)),
-          ),
-          SliverToBoxAdapter(child: _CategoryStrip(api.categories)),
-          if (deals.isNotEmpty) ...[
-            const SliverToBoxAdapter(child: SectionHeader('عروض حصرية', subtitle: 'خصومات لفترة محدودة')),
-            SliverToBoxAdapter(child: _HorizontalProducts(deals, tag: 'deal')),
-          ],
-          const SliverToBoxAdapter(child: _Values()),
-          const SliverToBoxAdapter(child: SectionHeader('الأكثر طلباً', subtitle: 'اختيارات المحترفين في الورش')),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                mainAxisExtent: 292,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (c, i) => Reveal(index: i, child: ProductCard(api.featured[i], heroTag: 'feat')),
-                childCount: api.featured.length,
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: _MaintenanceBanner()),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
-        ],
+        slivers: slivers,
       ),
     );
   }
@@ -86,17 +111,17 @@ class _Header extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('أهلاً بك في', style: T.b(12.5, c: C.muted)),
-                Text('كوفيكس سوريا', style: T.h(19)),
+                Text(Cfg.i.s('general.welcome_small', 'أهلاً بك في'), style: T.b(12.5, c: C.muted)),
+                Text(Cfg.i.s('general.welcome_big', 'كوفيكس سوريا'), style: T.h(19)),
               ]),
             ),
             Pressable(
-              onTap: () => openUrl('https://wa.me/${Config.whatsapp}'),
+              onTap: () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport),
               child: Container(
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(15), border: Border.all(color: C.line)),
-                child: const Icon(Icons.support_agent_rounded, color: C.text),
+                child: Icon(Icons.support_agent_rounded, color: C.text),
               ),
             ),
           ]),
@@ -120,7 +145,7 @@ class _Header extends StatelessWidget {
                   child: Row(children: [
                     const Icon(Icons.search_rounded, color: C.muted),
                     const SizedBox(width: 10),
-                    Expanded(child: Text('ابحث عن مثقب، جلاخة، كمبريسور...', style: T.b(14, c: C.muted))),
+                    Expanded(child: Text(Cfg.i.s('general.search_hint', 'ابحث عن مثقب، جلاخة، كمبريسور...'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(14, c: C.muted))),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(11)),
@@ -138,10 +163,22 @@ class _Header extends StatelessWidget {
 }
 
 class _Slide {
-  final String kicker, title, sub, cta;
+  final String kicker, title, sub, cta, image, style, actionType, actionValue;
   final IconData icon;
-  final List<Color> colors;
-  const _Slide(this.kicker, this.title, this.sub, this.cta, this.icon, this.colors);
+  const _Slide(this.kicker, this.title, this.sub, this.cta, this.icon, this.image, this.style, this.actionType, this.actionValue);
+
+  factory _Slide.fromJson(Map<String, dynamic> j) => _Slide(
+        '${j['kicker'] ?? ''}', '${j['title'] ?? ''}', '${j['subtitle'] ?? ''}', '${j['cta'] ?? ''}',
+        iconByKey('${j['icon']}', Icons.bolt_rounded), '${j['image'] ?? ''}', '${j['style'] ?? 'dark'}',
+        '${j['action_type'] ?? 'none'}', '${j['action_value'] ?? ''}');
+
+  List<Color> get colors => switch (style) {
+        'accent' => [C.accent2, C.accentDeep],
+        'light' => [Colors.white, const Color(0xFFEDEAE4)],
+        'dark2' => [C.ink, C.inkLight],
+        _ => [C.inkLight, C.ink],
+      };
+  bool get lightBg => style == 'accent' || style == 'light';
 }
 
 class _HeroCarousel extends StatefulWidget {
@@ -155,20 +192,13 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   int _i = 0;
   Timer? _t;
 
-  static const slides = [
-    _Slide('الوكيل الحصري', 'قوة احترافية\nبين يديك', 'عدد كوفيكس الأصلية بكفالة 6 أشهر', 'تسوّق الآن', Icons.bolt_rounded,
-        [Color(0xFF0F3041), Color(0xFF061922)]),
-    _Slide('حرية بلا أسلاك', 'عدد البطارية\nبتقنية الليثيوم', 'منصة 20V واحدة لكل عدتك', 'اكتشف التشكيلة', Icons.battery_charging_full_rounded,
-        [Color(0xFFFFB83D), Color(0xFFE08A00)]),
-    _Slide('للتجار والورش', 'أسعار خاصة\nلطلبات الجملة', 'تواصل مع فريق المبيعات مباشرة', 'راسلنا واتساب', Icons.storefront_rounded,
-        [Color(0xFF15394A), Color(0xFF0A202B)]),
-  ];
+  static List<_Slide> get slides => Cfg.i.list('banners').where((b) => b['enabled'] != false).map(_Slide.fromJson).toList();
 
   @override
   void initState() {
     super.initState();
-    _t = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!_pc.hasClients) return;
+    _t = Timer.periodic(Duration(milliseconds: (Cfg.i.d('banner_seconds', 5).clamp(2, 30) * 1000).round()), (_) {
+      if (!_pc.hasClients || slides.length < 2) return;
       _pc.animateToPage((_i + 1) % slides.length, duration: const Duration(milliseconds: 700), curve: Curves.easeInOutCubic);
     });
   }
@@ -181,33 +211,27 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   }
 
   void _cta(int i) {
-    if (i == 2) {
-      openUrl('https://wa.me/${Config.whatsapp}?text=${Uri.encodeComponent('مرحباً، أرغب بالاستفسار عن أسعار الجملة للتجار.')}');
-    } else if (i == 1) {
-      final cat = Api.i.categories.where((c) => categoryIcon(c.slug, c.name) == Icons.battery_charging_full_rounded).firstOrNull;
-      if (cat != null) {
-        openCategory(context, cat);
-        return;
-      }
-      Shell.of(context)?.go(1);
-    } else {
-      Shell.of(context)?.go(1);
-    }
+    final l = slides;
+    if (i >= l.length) return;
+    runAction(context, l[i].actionType, l[i].actionValue);
   }
 
   @override
   Widget build(BuildContext context) {
+    final slides = _HeroCarouselState.slides;
+    if (slides.isEmpty) return const SizedBox.shrink();
+    if (_i >= slides.length) _i = 0;
     return Column(children: [
       const SizedBox(height: 16),
       SizedBox(
-        height: 196,
+        height: Cfg.i.d('banner_height', 196).clamp(120, 420).toDouble(),
         child: PageView.builder(
           controller: _pc,
           itemCount: slides.length,
           onPageChanged: (i) => setState(() => _i = i),
           itemBuilder: (c, i) {
             final s = slides[i];
-            final light = i == 1;
+            final light = s.lightBg;
             final fg = light ? C.ink : Colors.white;
             return AnimatedBuilder(
               animation: _pc,
@@ -227,7 +251,19 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                     boxShadow: [BoxShadow(color: s.colors.last.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 12))],
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: Stack(children: [
+                  child: s.style == 'image' && s.image.isNotEmpty
+                      ? CachedNetworkImage(imageUrl: s.image, fit: BoxFit.cover, width: double.infinity, placeholder: (_, _) => const Shimmer())
+                      : Stack(children: [
+                    if (s.image.isNotEmpty)
+                      Positioned.fill(
+                        child: CachedNetworkImage(
+                          imageUrl: s.image,
+                          fit: BoxFit.cover,
+                          color: Colors.black.withValues(alpha: light ? 0 : 0.35),
+                          colorBlendMode: BlendMode.darken,
+                          errorWidget: (_, _, _) => const SizedBox(),
+                        ),
+                      ),
                     PositionedDirectional(
                       end: -30,
                       bottom: -40,
@@ -251,13 +287,13 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Badge2(s.kicker, bg: fg.withValues(alpha: 0.12), fg: fg),
+                          if (s.kicker.isNotEmpty) Badge2(s.kicker, bg: fg.withValues(alpha: 0.12), fg: fg),
                           const SizedBox(height: 10),
                           Text(s.title, style: T.h(22, c: fg, height: 1.3)),
                           const Spacer(),
                           Row(children: [
                             Expanded(child: Text(s.sub, maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(12.5, c: fg.withValues(alpha: 0.75)))),
-                            Container(
+                            if (s.cta.isNotEmpty) Container(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(color: light ? C.ink : C.accent, borderRadius: BorderRadius.circular(30)),
                               child: Text(s.cta, style: T.b(12.5, w: FontWeight.w700, c: light ? Colors.white : C.ink, height: 1.3)),
@@ -327,7 +363,7 @@ class _CategoryStrip extends StatelessWidget {
                     child: Center(
                       child: ShaderMask(
                         shaderCallback: (r) => C.accentGrad.createShader(r),
-                        child: Icon(categoryIcon(k.slug, k.name), size: 32, color: Colors.white),
+                        child: Icon(categoryIcon(k.slug, k.name, k.id), size: 32, color: Colors.white),
                       ),
                     ),
                   ),
@@ -367,11 +403,8 @@ class _Values extends StatelessWidget {
   const _Values();
   @override
   Widget build(BuildContext context) {
-    const vals = [
-      (Icons.verified_rounded, 'جودة أصلية', 'منتجات معتمدة من الشركة الأم'),
-      (Icons.shield_rounded, 'كفالة 6 أشهر', 'صيانة وقطع غيار مضمونة'),
-      (Icons.handshake_rounded, 'نرحّب بالتجار', 'أسعار جملة وشراكات'),
-    ];
+    final vals = Cfg.i.list('pages.values').map((v) => (iconByKey('${v['icon']}', Icons.verified_rounded), '${v['title'] ?? ''}', '${v['sub'] ?? ''}')).toList();
+    if (vals.isEmpty) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 28, 16, 0),
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
@@ -399,7 +432,8 @@ class _Values extends StatelessWidget {
 }
 
 class _MaintenanceBanner extends StatelessWidget {
-  const _MaintenanceBanner();
+  final String title, sub;
+  const _MaintenanceBanner({required this.title, required this.sub});
   @override
   Widget build(BuildContext context) {
     return Pressable(
@@ -418,14 +452,14 @@ class _MaintenanceBanner extends StatelessWidget {
             width: 58,
             height: 58,
             decoration: BoxDecoration(gradient: C.accentGrad, borderRadius: BorderRadius.circular(18)),
-            child: const Icon(Icons.build_circle_rounded, color: C.ink, size: 32),
+            child: Icon(Icons.build_circle_rounded, color: C.ink, size: 32),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('مركز الصيانة المعتمد', style: T.h(16)),
+              Text(title, style: T.h(16)),
               const SizedBox(height: 3),
-              Text('اطلب صيانة لعدّتك خلال دقيقة واحدة', style: T.b(12.5, c: C.muted)),
+              Text(sub, style: T.b(12.5, c: C.muted)),
             ]),
           ),
           Container(

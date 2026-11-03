@@ -1,4 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
+import '../data/config.dart';
 
 import '../theme.dart';
 
@@ -9,6 +12,14 @@ class BrandIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final url = Cfg.i.s('brand.icon_url');
+    final asset = Image.asset('assets/img/icon.png', width: size, height: size, fit: BoxFit.cover);
+    if (url.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.26),
+        child: CachedNetworkImage(imageUrl: url, width: size, height: size, fit: BoxFit.cover, placeholder: (_, _) => asset, errorWidget: (_, _, _) => asset),
+      );
+    }
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.26),
       child: Image.asset(
@@ -19,7 +30,7 @@ class BrandIcon extends StatelessWidget {
         errorBuilder: (_, _, _) => Container(
           width: size,
           height: size,
-          decoration: const BoxDecoration(gradient: C.accentGrad),
+          decoration: BoxDecoration(gradient: C.accentGrad),
           alignment: Alignment.center,
           child: Text('C', style: T.h(size * 0.6, c: Colors.white, w: FontWeight.w800, height: 1)),
         ),
@@ -36,6 +47,14 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final url = Cfg.i.s('brand.logo_url');
+    if (url.isNotEmpty) {
+      return CachedNetworkImage(imageUrl: url, height: height, fit: BoxFit.contain, errorWidget: (_, _, _) => _asset());
+    }
+    return _asset();
+  }
+
+  Widget _asset() {
     return Image.asset(
       onDark ? 'assets/img/logo_dark.png' : 'assets/img/logo.png',
       height: height,

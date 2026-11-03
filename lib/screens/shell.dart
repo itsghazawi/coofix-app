@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/config.dart';
 import '../data/store.dart';
+import '../widgets/notices.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'cart.dart';
@@ -20,20 +22,35 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int tab = 0;
 
+  static const keys = ['home', 'categories', 'cart', 'favorites', 'more'];
+
   void go(int i) {
     if (i == tab) return;
     HapticFeedback.lightImpact();
     setState(() => tab = i);
   }
 
+  void goKey(String key) {
+    final i = keys.indexOf(key.trim());
+    if (i >= 0) go(i);
+  }
+
   @override
   void initState() {
     super.initState();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark.copyWith(statusBarColor: Colors.transparent));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startupNotices());
+  }
+
+  Future<void> _startupNotices() async {
+    if (!mounted) return;
+    if (await maybeShowUpdate(context)) return;
+    if (mounted) await maybeShowPopup(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (Cfg.i.b('general.maintenance.enabled')) return const MaintenanceModeScreen();
     final pages = const [HomeScreen(), CategoriesScreen(), CartScreen(), FavoritesScreen(), MoreScreen()];
     return PopScope(
       canPop: tab == 0,
@@ -54,13 +71,19 @@ class _NavBar extends StatelessWidget {
   final ValueChanged<int> onTap;
   const _NavBar({required this.index, required this.onTap});
 
-  static const items = [
-    (Icons.home_rounded, Icons.home_outlined, 'الرئيسية'),
-    (Icons.grid_view_rounded, Icons.grid_view_outlined, 'الأقسام'),
-    (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, 'السلة'),
-    (Icons.favorite_rounded, Icons.favorite_border_rounded, 'المفضلة'),
-    (Icons.menu_rounded, Icons.menu_rounded, 'المزيد'),
-  ];
+  static List<(IconData, IconData, String)> get items => [
+        (Icons.home_rounded, Icons.home_outlined, Cfg.i.s('nav.home', 'الرئيسية')),
+        (Icons.grid_view_rounded, Icons.grid_view_outlined, Cfg.i.s('nav.categories', 'الأقسام')),
+        (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, Cfg.i.s('nav.cart', 'السلة')),
+        (Icons.favorite_rounded, Icons.favorite_border_rounded, Cfg.i.s('nav.favorites', 'المفضلة')),
+        (Icons.menu_rounded, Icons.menu_rounded, Cfg.i.s('nav.more', 'المزيد')),
+      ];
+
+  static bool visible(int i) {
+    if (i == 2) return Cfg.i.b('products.allow_cart', true);
+    if (i == 3) return Cfg.i.b('nav.show_favorites', true);
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +101,7 @@ class _NavBar extends StatelessWidget {
         child: Row(
           children: [
             for (var i = 0; i < items.length; i++)
+              if (visible(i))
               Expanded(
                 child: Pressable(
                   scale: 0.9,

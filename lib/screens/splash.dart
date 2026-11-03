@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
@@ -36,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.wait([
       Api.i.load(),
       Store.i.init(),
-      Future.delayed(const Duration(milliseconds: 2600)),
+      Future.delayed(Duration(milliseconds: (Cfg.i.d('brand.splash_seconds', 2.6).clamp(0.8, 8) * 1000).round())),
     ]);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(PageRouteBuilder(
@@ -64,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: C.ink,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: RadialGradient(center: Alignment(0, -0.25), radius: 1.1, colors: [Color(0xFF123747), C.ink]),
         ),
         child: Stack(
@@ -102,11 +103,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     child: SlideTransition(
                       position: Tween(begin: const Offset(0, 0.4), end: Offset.zero).animate(text),
                       child: Column(children: [
-                        Text('COOFIX', style: T.h(30, c: Colors.white, w: FontWeight.w800).copyWith(letterSpacing: 8)),
+                        Text(Cfg.i.s('brand.splash_title', 'COOFIX'), style: T.h(30, c: Colors.white, w: FontWeight.w800).copyWith(letterSpacing: 8)),
                         const SizedBox(height: 6),
-                        Text('كوفيكس سوريا', style: T.h(17, c: Colors.white.withValues(alpha: 0.9), w: FontWeight.w500)),
+                        Text(Cfg.i.s('brand.splash_sub', 'كوفيكس سوريا'), style: T.h(17, c: Colors.white.withValues(alpha: 0.9), w: FontWeight.w500)),
                         const SizedBox(height: 4),
-                        Text('الوكيل الحصري والرسمي في سوريا', style: T.b(13, c: Colors.white.withValues(alpha: 0.5))),
+                        Text(Cfg.i.s('brand.splash_note', 'الوكيل الحصري والرسمي في سوريا'), textAlign: TextAlign.center, style: T.b(13, c: Colors.white.withValues(alpha: 0.5))),
                       ]),
                     ),
                   ),
@@ -130,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         builder: (_, _) => FractionallySizedBox(
                           widthFactor: bar.value,
                           alignment: AlignmentDirectional.centerStart,
-                          child: Container(decoration: const BoxDecoration(gradient: C.accentGrad)),
+                          child: Container(decoration: BoxDecoration(gradient: C.accentGrad)),
                         ),
                       ),
                     ]),
@@ -154,7 +155,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
-      ..shader = const SweepGradient(colors: [Colors.transparent, C.accent2, C.accent, Colors.transparent], stops: [0, 0.35, 0.6, 1]).createShader(rect);
+      ..shader = SweepGradient(colors: [Colors.transparent, C.accent2, C.accent, Colors.transparent], stops: [0, 0.35, 0.6, 1]).createShader(rect);
     canvas.drawArc(rect, 0, math.pi * 1.6, false, p);
     final dots = Paint()..color = Colors.white.withValues(alpha: 0.12);
     for (var i = 0; i < 48; i++) {

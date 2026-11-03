@@ -31,7 +31,9 @@ class Price {
   bool get onSale => regular > price && price > 0;
   int get discountPct => onSale ? (((regular - price) / regular) * 100).round() : 0;
 
-  String get unit => (prefix.isNotEmpty ? prefix : suffix).trim();
+  /// Currency label override from the control panel.
+  static String labelOverride = '';
+  String get unit => labelOverride.isNotEmpty ? labelOverride : (prefix.isNotEmpty ? prefix : suffix).trim();
 
   String num_(num v) {
     final s = v.round().toString();
@@ -50,6 +52,7 @@ class Price {
       if (i > 0 && (s.length - i) % 3 == 0) b.write(thousands);
       b.write(s[i]);
     }
+    if (labelOverride.isNotEmpty) return '$b $labelOverride';
     return '$prefix$b$suffix'.trim();
   }
 
@@ -105,6 +108,33 @@ class Product {
   });
 
   String? get cover => images.isEmpty ? null : images.first;
+
+  Product copyWith({List<Category>? categories}) => Product(
+        id: id, name: name, price: price, shortDesc: shortDesc, desc: desc, images: images,
+        categories: categories ?? this.categories, inStock: inStock, sku: sku, permalink: permalink, specs: specs, featured: featured);
+
+  /// Attributes plus any "name: value" lines written in the description.
+  List<MapEntry<String, String>> specsWith({bool parseDescription = true}) {
+    final out = [...specs];
+    if (!parseDescription) return out;
+    final seen = out.map((e) => e.key).toSet();
+    for (final line in '$shortDesc\n$desc'.split('\n')) {
+      final m = RegExp(r'^\s*[•\-\*]?\s*([^:：]{2,40})\s*[:：]\s*(.{1,80})$').firstMatch(line);
+      if (m == null) continue;
+      final k = m.group(1)!.trim(), v = m.group(2)!.trim();
+      if (k.isEmpty || v.isEmpty || seen.contains(k)) continue;
+      seen.add(k);
+      out.add(MapEntry(k, v));
+    }
+    return out;
+  }
+
+  /// Description with the "name: value" spec lines removed (they show in the table).
+  String aboutWithoutSpecs(String text) => text
+      .split('\n')
+      .where((l) => !RegExp(r'^\s*[•\-\*]?\s*[^:：]{2,40}\s*[:：]\s*.{1,80}$').hasMatch(l))
+      .join('\n')
+      .trim();
   String get categoryName => categories.isEmpty ? '' : categories.first.name;
 
   factory Product.fromJson(Map<String, dynamic> j) {

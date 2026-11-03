@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
 import '../data/models.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
@@ -35,7 +36,7 @@ class CategoriesScreen extends StatelessWidget {
           sliver: SliverList.separated(
             itemCount: cats.length,
             separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (c, i) => Reveal(index: i, child: _CategoryTile(cats[i], dark: i % 3 == 0)),
+            itemBuilder: (c, i) => Reveal(index: i, child: _CategoryTile(cats[i], dark: Cfg.i.n('categories.dark_every', 3) > 0 && i % Cfg.i.n('categories.dark_every', 3) == 0)),
           ),
         ),
       ],
@@ -68,7 +69,7 @@ class _CategoryTile extends StatelessWidget {
           PositionedDirectional(
             end: -18,
             bottom: -26,
-            child: Icon(categoryIcon(c.slug, c.name), size: 150, color: (dark ? Colors.white : C.ink).withValues(alpha: 0.05)),
+            child: Icon(categoryIcon(c.slug, c.name, c.id), size: 150, color: (dark ? Colors.white : C.ink).withValues(alpha: 0.05)),
           ),
           Padding(
             padding: const EdgeInsets.all(18),
@@ -83,7 +84,7 @@ class _CategoryTile extends StatelessWidget {
                 child: Center(
                   child: ShaderMask(
                     shaderCallback: (r) => C.accentGrad.createShader(r),
-                    child: Icon(categoryIcon(c.slug, c.name), size: 34, color: Colors.white),
+                    child: Icon(categoryIcon(c.slug, c.name, c.id), size: 34, color: Colors.white),
                   ),
                 ),
               ),
@@ -161,12 +162,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               titlePadding: const EdgeInsetsDirectional.only(start: 60, bottom: 16, end: 20),
               title: Text(widget.c.name, style: T.h(18, c: Colors.white)),
               background: Container(
-                decoration: const BoxDecoration(gradient: C.inkGrad),
+                decoration: BoxDecoration(gradient: C.inkGrad),
                 child: Stack(children: [
                   PositionedDirectional(
                     end: -20,
                     bottom: -30,
-                    child: Icon(categoryIcon(widget.c.slug, widget.c.name), size: 190, color: C.accent.withValues(alpha: 0.12)),
+                    child: Icon(categoryIcon(widget.c.slug, widget.c.name, widget.c.id), size: 190, color: C.accent.withValues(alpha: 0.12)),
                   ),
                 ]),
               ),

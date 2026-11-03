@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/config.dart';
 import '../data/models.dart';
 import '../data/store.dart';
 import '../screens/product.dart';
@@ -33,7 +34,7 @@ class ProductCard extends StatelessWidget {
         width: width,
         decoration: BoxDecoration(
           color: C.card,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(C.radius),
           border: Border.all(color: C.line.withValues(alpha: 0.7)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 18, offset: const Offset(0, 8))],
         ),
@@ -46,7 +47,7 @@ class ProductCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned.fill(child: Hero(tag: '$heroTag-${p.id}', child: ProductImage(p, radius: 18, iconSize: 40))),
-                  if (p.price.onSale)
+                  if (p.price.onSale && Cfg.i.b('products.show_discount', true) && !Cfg.i.b('products.hide_prices'))
                     PositionedDirectional(top: 8, start: 8, child: Badge2('-${p.price.discountPct}%')),
                   PositionedDirectional(top: 6, end: 6, child: _FavButton(p)),
                 ],
@@ -68,7 +69,7 @@ class ProductCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Expanded(child: PriceView(p.price, size: 14.5, compact: true)),
-                      _AddButton(p),
+                      if (Cfg.i.b('products.allow_cart', true)) _AddButton(p),
                     ],
                   ),
                 ],

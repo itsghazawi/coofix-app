@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
@@ -13,7 +14,36 @@ class MoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
+    final cfg = Cfg.i;
     void push(Widget w) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => w));
+    bool on(String k) => cfg.b('pages.more_items.$k', true);
+    final email = cfg.s('contact.email');
+    final address = cfg.s('contact.address');
+    final maps = cfg.s('contact.maps_url');
+    final hours = cfg.s('contact.hours');
+    final site = cfg.s('contact.website', Config.site);
+    final catalogue = cfg.s('contact.catalogue_url', Config.site);
+    final services = <_Item>[
+      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', 'طلب صيانة'), 'مركز صيانة معتمد', () => push(const MaintenanceScreen())),
+      if (on('warranty')) _Item(Icons.shield_rounded, 'الكفالة', cfg.s('pages.warranty_title', 'شروط الكفالة'), () => push(const WarrantyScreen())),
+      if (on('catalogue') && catalogue.isNotEmpty) _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات ${Config.brand}', () => openUrl(catalogue)),
+      if (on('traders')) _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
+          () => openWhatsApp(cfg.s('pages.trader_message', 'مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة.'), number: Config.whatsappSupport)),
+    ];
+    final contact = <_Item>[
+      if (on('whatsapp')) _Item(Icons.chat_rounded, 'واتساب', Config.pretty(Config.whatsappSupport), () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport), color: C.green),
+      if (on('call')) _Item(Icons.call_rounded, 'اتصال مباشر', Config.pretty(Config.phone), () => openUrl('tel:+${Config.phone}')),
+      if (on('email') && email.isNotEmpty) _Item(Icons.alternate_email_rounded, 'البريد الإلكتروني', email, () => openUrl('mailto:$email')),
+      if (on('website') && site.isNotEmpty) _Item(Icons.language_rounded, 'الموقع الإلكتروني', site.replaceAll(RegExp(r'^https?://(www\.)?'), '').replaceAll(RegExp(r'/$'), ''), () => openUrl(site)),
+      if (on('location') && (address.isNotEmpty || maps.isNotEmpty))
+        _Item(Icons.location_on_rounded, 'العنوان', address.isNotEmpty ? address : 'عرض على الخريطة', () => maps.isNotEmpty ? openUrl(maps) : null),
+      if (hours.isNotEmpty) _Item(Icons.schedule_rounded, 'أوقات الدوام', hours, () {}),
+    ];
+    final socials = <(String, String)>[
+      if (on('socials'))
+        for (final k in ['facebook', 'instagram', 'tiktok', 'telegram', 'youtube'])
+          if (cfg.s('contact.socials.$k').isNotEmpty) (k, cfg.s('contact.socials.$k')),
+    ];
     return ListView(
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.fromLTRB(16, top + 16, 16, 130),
@@ -28,15 +58,15 @@ class MoreScreen extends StatelessWidget {
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('كوفيكس سوريا', style: T.h(20, c: Colors.white)),
+                    Text(Config.brand, style: T.h(20, c: Colors.white)),
                     const SizedBox(height: 2),
-                    Text('الوكيل الحصري والرسمي', style: T.b(13, c: Colors.white.withValues(alpha: 0.55))),
+                    Text(cfg.s('general.tagline', 'الوكيل الحصري والرسمي'), style: T.b(13, c: Colors.white.withValues(alpha: 0.55))),
                   ]),
                 ),
               ]),
               const SizedBox(height: 18),
               Row(children: [
-                _Stat('${Api.i.products.length}+', 'منتج'),
+                _Stat('${Api.i.products.length}+', cfg.s('pages.stats_products_label', 'منتج')),
                 _Stat('${Api.i.categories.length}', 'أقسام'),
                 const _Stat('6', 'أشهر كفالة'),
               ]),
@@ -44,27 +74,61 @@ class MoreScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        _Group(title: 'الخدمات', items: [
-          _Item(Icons.build_circle_rounded, 'طلب صيانة', 'مركز صيانة معتمد', () => push(const MaintenanceScreen())),
-          _Item(Icons.shield_rounded, 'الكفالة', 'شروط كفالة الستة أشهر', () => push(const WarrantyScreen())),
-          _Item(Icons.menu_book_rounded, 'تحميل الكتالوج', 'كتالوج منتجات كوفيكس', () => openUrl(Config.site)),
-          _Item(Icons.storefront_rounded, 'للتجار', 'أسعار الجملة والشراكات',
-              () => openWhatsApp('مرحباً، أنا تاجر وأرغب بالاستفسار عن أسعار الجملة لدى كوفيكس سوريا.')),
-        ]),
-        const SizedBox(height: 18),
-        _Group(title: 'تواصل معنا', items: [
-          _Item(Icons.chat_rounded, 'واتساب', Config.phoneDisplay, () => openWhatsApp('مرحباً كوفيكس سوريا 👋'), color: C.green),
-          _Item(Icons.call_rounded, 'اتصال مباشر', Config.phoneDisplay, () => openUrl('tel:+${Config.whatsapp}')),
-          _Item(Icons.language_rounded, 'الموقع الإلكتروني', 'coofix.sy', () => openUrl(Config.site)),
-        ]),
-        const SizedBox(height: 18),
-        _Group(title: 'عن كوفيكس', items: [
-          _Item(Icons.info_rounded, 'من نحن', 'قصة كوفيكس في سوريا', () => push(const AboutScreen())),
-        ]),
+        if (services.isNotEmpty) _Group(title: 'الخدمات', items: services),
+        if (services.isNotEmpty) const SizedBox(height: 18),
+        if (contact.isNotEmpty) _Group(title: 'تواصل معنا', items: contact),
+        if (socials.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _Socials(socials),
+        ],
+        if (on('about')) ...[
+          const SizedBox(height: 18),
+          _Group(title: 'عن كوفيكس', items: [
+            _Item(Icons.info_rounded, cfg.s('pages.about_title', 'من نحن'), 'قصة ${Config.brand}', () => push(const AboutScreen())),
+          ]),
+        ],
         const SizedBox(height: 26),
-        Center(child: Text('الإصدار 1.0.0 • نسخة تجريبية', style: T.b(12, c: C.muted))),
+        Center(child: Text(cfg.s('pages.footer_note', 'الإصدار $kAppVersion'), style: T.b(12, c: C.muted))),
       ],
     );
+  }
+}
+
+class _Socials extends StatelessWidget {
+  final List<(String, String)> items;
+  const _Socials(this.items);
+  static const _meta = {
+    'facebook': (Icons.facebook_rounded, 'فيسبوك', Color(0xFF1877F2)),
+    'instagram': (Icons.camera_alt_rounded, 'إنستغرام', Color(0xFFE1306C)),
+    'tiktok': (Icons.music_note_rounded, 'تيك توك', Color(0xFF111111)),
+    'telegram': (Icons.send_rounded, 'تلغرام', Color(0xFF229ED9)),
+    'youtube': (Icons.play_circle_fill_rounded, 'يوتيوب', Color(0xFFFF0000)),
+  };
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 10), child: Text('تابعنا', style: T.b(13, w: FontWeight.w700, c: C.muted))),
+      Row(children: [
+        for (final it in items)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Pressable(
+                onTap: () => openUrl(it.$2),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(20), border: Border.all(color: C.line)),
+                  child: Column(children: [
+                    Icon(_meta[it.$1]!.$1, color: _meta[it.$1]!.$3, size: 26),
+                    const SizedBox(height: 6),
+                    Text(_meta[it.$1]!.$2, style: T.b(11.5, w: FontWeight.w600)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    ]);
   }
 }
 
@@ -89,8 +153,9 @@ class _Item {
   final IconData icon;
   final String title, sub;
   final VoidCallback onTap;
-  final Color color;
-  const _Item(this.icon, this.title, this.sub, this.onTap, {this.color = C.accent});
+  final Color? _color;
+  Color get color => _color ?? C.accent;
+  const _Item(this.icon, this.title, this.sub, this.onTap, {Color? color}) : _color = color;
 }
 
 class _Group extends StatelessWidget {
@@ -150,7 +215,7 @@ class _Page extends StatelessWidget {
         children: [
           Container(
             padding: EdgeInsets.fromLTRB(20, top + 10, 20, 28),
-            decoration: const BoxDecoration(gradient: C.inkGrad, borderRadius: BorderRadius.vertical(bottom: Radius.circular(32))),
+            decoration: BoxDecoration(gradient: C.inkGrad, borderRadius: BorderRadius.vertical(bottom: Radius.circular(32))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Pressable(
                 onTap: () => Navigator.pop(context),
@@ -198,8 +263,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _Page(title: 'طلب صيانة', icon: Icons.build_circle_rounded, children: [
-      Text('عبّئ البيانات وسيتواصل معك فريق الصيانة المعتمد لتحديد موعد الاستلام.', style: T.b(14, c: C.muted, height: 1.7)),
+    return _Page(title: Cfg.i.s('pages.maintenance_title', 'طلب صيانة'), icon: Icons.build_circle_rounded, children: [
+      Text(Cfg.i.s('pages.maintenance_intro', 'عبّئ البيانات وسيتواصل معك فريق الصيانة المعتمد لتحديد موعد الاستلام.'), style: T.b(14, c: C.muted, height: 1.7)),
       const SizedBox(height: 20),
       Field(ctrl: name, label: 'الاسم', icon: Icons.person_rounded),
       const SizedBox(height: 12),
@@ -236,7 +301,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
             'الهاتف: ${phone.text}\n'
             'العدة: ${tool.text}\n'
             'المشكلة: ${issue.text}\n'
-            'ضمن الكفالة: ${warranty ? 'نعم' : 'لا'}'),
+            'ضمن الكفالة: ${warranty ? 'نعم' : 'لا'}', number: Config.whatsappMaintenance),
       ),
     ]);
   }
@@ -246,13 +311,8 @@ class WarrantyScreen extends StatelessWidget {
   const WarrantyScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    const points = [
-      ('مدة الكفالة', 'ستة أشهر من تاريخ الشراء على جميع عدد كوفيكس الأصلية.'),
-      ('ما تشمله', 'عيوب التصنيع والأعطال الفنية الناتجة عن الاستخدام الطبيعي.'),
-      ('ما لا تشمله', 'سوء الاستخدام، الكسر، والقطع الاستهلاكية كالفحمات والشفرات.'),
-      ('كيف تستفيد', 'احتفظ بفاتورة الشراء وتواصل مع مركز الصيانة عبر التطبيق.'),
-    ];
-    return _Page(title: 'كفالة 6 أشهر', icon: Icons.shield_rounded, children: [
+    final points = Cfg.i.list('pages.warranty_points').map((p) => ('${p['title'] ?? ''}', '${p['body'] ?? ''}')).toList();
+    return _Page(title: Cfg.i.s('pages.warranty_title', 'كفالة 6 أشهر'), icon: Icons.shield_rounded, children: [
       for (var i = 0; i < points.length; i++)
         Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -284,17 +344,10 @@ class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
   @override
   Widget build(BuildContext context) {
-    return _Page(title: 'من نحن', icon: Icons.info_rounded, children: [
+    return _Page(title: Cfg.i.s('pages.about_title', 'من نحن'), icon: Icons.info_rounded, children: [
       const Center(child: BrandLogo(height: 54)),
       const SizedBox(height: 22),
-      Text(
-        'كوفيكس سوريا هي الوكيل الحصري والرسمي لعلامة كوفيكس في سوريا. '
-        'نوفّر تشكيلة متكاملة من العدد الكهربائية وعدد البطارية والوقود والهواء والعدد اليدوية '
-        'مع كفالة حقيقية ومركز صيانة معتمد وقطع غيار أصلية.',
-        style: T.b(15, height: 1.9, c: const Color(0xFF4A4F57)),
-      ),
-      const SizedBox(height: 20),
-      Text('نرحّب بالتجار والموزعين في جميع المحافظات، ونقدّم أسعاراً خاصة للجملة.', style: T.b(15, height: 1.9, c: const Color(0xFF4A4F57))),
+      Text(Cfg.i.s('pages.about_body'), style: T.b(15, height: 1.9, c: const Color(0xFF4A4F57))),
     ]);
   }
 }

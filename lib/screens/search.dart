@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../data/api.dart';
+import '../data/config.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String initial;
+  const SearchScreen({super.key, this.initial = ''});
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final _c = TextEditingController();
-  String q = '';
+  late final _c = TextEditingController(text: widget.initial);
+  late String q = widget.initial;
 
-  static const suggestions = ['مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'];
+  List<String> get suggestions {
+    final l = Cfg.i.strings('pages.search_suggestions');
+    return l.isEmpty ? const ['مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'] : l;
+  }
 
   @override
   void dispose() {
@@ -49,7 +54,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   color: Colors.transparent,
                   child: TextField(
                     controller: _c,
-                    autofocus: true,
+                    autofocus: widget.initial.isEmpty,
                     onChanged: (v) => setState(() => q = v),
                     style: T.b(15, w: FontWeight.w500),
                     decoration: InputDecoration(
@@ -70,7 +75,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.line)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: const BorderSide(color: C.accent, width: 1.5)),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide(color: C.accent, width: 1.5)),
                     ),
                   ),
                 ),
@@ -94,7 +99,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(color: C.card, borderRadius: BorderRadius.circular(30), border: Border.all(color: C.line)),
                           child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.trending_up_rounded, size: 16, color: C.accent),
+                            Icon(Icons.trending_up_rounded, size: 16, color: C.accent),
                             const SizedBox(width: 6),
                             Text(s, style: T.b(13.5, w: FontWeight.w600)),
                           ]),

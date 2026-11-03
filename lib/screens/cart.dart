@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/config.dart';
 import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
@@ -132,40 +133,71 @@ class _Checkout extends StatefulWidget {
 
 class _CheckoutState extends State<_Checkout> {
   void _order() {
+    final cfg = Cfg.i;
     final name = TextEditingController();
     final city = TextEditingController();
+    final phone = TextEditingController();
     final note = TextEditingController();
+    String? error;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (c) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(c).bottom),
-        child: Container(
-          padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
-          decoration: const BoxDecoration(color: C.bg, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
-            const SizedBox(height: 18),
-            Text('إتمام الطلب', style: T.h(21)),
-            const SizedBox(height: 4),
-            Text('سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.', style: T.b(13, c: C.muted)),
-            const SizedBox(height: 18),
-            Field(ctrl: name, label: 'الاسم الكامل', icon: Icons.person_rounded),
-            const SizedBox(height: 12),
-            Field(ctrl: city, label: 'المدينة / المنطقة', icon: Icons.location_on_rounded),
-            const SizedBox(height: 12),
-            Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
-            const SizedBox(height: 20),
-            WhatsAppButton(
-              label: 'أرسل الطلب عبر واتساب',
-              onTap: () {
-                final items = Store.i.items;
-                openWhatsApp(orderMessage(items, Store.i.total, items.first.key.price, name: name.text, city: city.text, note: note.text));
-                Navigator.pop(c);
-              },
+      builder: (c) => StatefulBuilder(
+        builder: (c, setSheet) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(c).bottom),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
+            decoration: BoxDecoration(color: C.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
+                const SizedBox(height: 18),
+                Text(cfg.s('order.sheet_title', 'إتمام الطلب'), style: T.h(21)),
+                const SizedBox(height: 4),
+                Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
+                const SizedBox(height: 18),
+                if (cfg.b('order.ask_name', true)) ...[
+                  Field(ctrl: name, label: cfg.b('order.require_name') ? 'الاسم الكامل *' : 'الاسم الكامل', icon: Icons.person_rounded),
+                  const SizedBox(height: 12),
+                ],
+                if (cfg.b('order.ask_city', true)) ...[
+                  Field(ctrl: city, label: cfg.b('order.require_city') ? 'المدينة / المنطقة *' : 'المدينة / المنطقة', icon: Icons.location_on_rounded),
+                  const SizedBox(height: 12),
+                ],
+                if (cfg.b('order.ask_phone')) ...[
+                  Field(ctrl: phone, label: cfg.b('order.require_phone') ? 'رقم الهاتف *' : 'رقم الهاتف', icon: Icons.phone_rounded, type: TextInputType.phone),
+                  const SizedBox(height: 12),
+                ],
+                if (cfg.b('order.ask_note', true)) ...[
+                  Field(ctrl: note, label: 'ملاحظات (اختياري)', icon: Icons.edit_note_rounded),
+                  const SizedBox(height: 12),
+                ],
+                if (error != null) Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(error!, style: T.b(13, c: const Color(0xFFD64545), w: FontWeight.w600)),
+                ),
+                const SizedBox(height: 8),
+                WhatsAppButton(
+                  label: 'أرسل الطلب عبر واتساب',
+                  onTap: () {
+                    String? miss;
+                    if (cfg.b('order.ask_name', true) && cfg.b('order.require_name') && name.text.trim().isEmpty) miss = 'الاسم';
+                    if (miss == null && cfg.b('order.ask_city', true) && cfg.b('order.require_city') && city.text.trim().isEmpty) miss = 'المدينة';
+                    if (miss == null && cfg.b('order.ask_phone') && cfg.b('order.require_phone') && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
+                    if (miss != null) {
+                      setSheet(() => error = 'الرجاء تعبئة $miss');
+                      return;
+                    }
+                    final items = Store.i.items;
+                    openWhatsApp(orderMessage(items, Store.i.total, items.first.key.price,
+                        name: name.text.trim(), city: city.text.trim(), phone: phone.text.trim(), note: note.text.trim()));
+                    Navigator.pop(c);
+                  },
+                ),
+              ]),
             ),
-          ]),
+          ),
         ),
       ),
     );
@@ -173,20 +205,24 @@ class _CheckoutState extends State<_Checkout> {
 
   @override
   Widget build(BuildContext context) {
+    final cfg = Cfg.i;
     final items = Store.i.items;
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final showTotal = cfg.b('order.show_total', true) && !cfg.b('products.hide_prices') && Store.i.total > 0;
     return Container(
       margin: EdgeInsets.fromLTRB(16, 0, 16, (bottom > 0 ? bottom : 14) + 82),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(gradient: C.inkGrad, borderRadius: BorderRadius.circular(28)),
       child: Column(children: [
-        Row(children: [
-          Text('الإجمالي التقريبي', style: T.b(13.5, c: Colors.white.withValues(alpha: 0.6))),
-          const Spacer(),
-          Text(items.first.key.price.fmt(Store.i.total), style: T.h(20, c: Colors.white)),
-        ]),
-        const SizedBox(height: 14),
-        WhatsAppButton(label: 'اطلب عبر واتساب', onTap: _order),
+        if (showTotal) ...[
+          Row(children: [
+            Text(cfg.s('order.total_label', 'الإجمالي التقريبي'), style: T.b(13.5, c: Colors.white.withValues(alpha: 0.6))),
+            const Spacer(),
+            Text(items.first.key.price.fmt(Store.i.total), textDirection: TextDirection.rtl, style: T.h(20, c: Colors.white)),
+          ]),
+          const SizedBox(height: 14),
+        ],
+        WhatsAppButton(label: cfg.s('order.button', 'اطلب عبر واتساب'), onTap: _order),
       ]),
     );
   }
@@ -238,7 +274,7 @@ class Field extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.line)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.line)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: C.accent, width: 1.5)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: C.accent, width: 1.5)),
         ),
       );
 }
