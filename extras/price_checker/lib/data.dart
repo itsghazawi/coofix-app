@@ -18,8 +18,8 @@ class Settings {
   static int _i(String k, int d) => _p.getInt(k) ?? d;
   static bool _b(String k, bool d) => _p.getBool(k) ?? d;
 
-  static String get adminUser => _s('admin_user', 'coofix');
-  static String get adminPass => _s('admin_pass', 'Coofix2223888syria');
+  static String get adminUser => _s('admin_user', 'admin');
+  static String get adminPass => _s('admin_pass', 'admin');
   static Future<void> setAdmin(String u, String p) async {
     await _p.setString('admin_user', u);
     await _p.setString('admin_pass', p);
