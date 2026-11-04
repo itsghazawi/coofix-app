@@ -149,22 +149,27 @@ class Db {
   }
 
   /// Returns (added, updated).
-  static Future<(int, int)> apply(List<Product> list, {required bool replace, String? fileName}) async {
+  static Future<(int, int)> apply(List<Product> list, {required bool replace, bool addNew = true, String? fileName}) async {
     var added = 0, updated = 0;
     if (replace) _items.clear();
     for (final p in list) {
-      final old = _items[p.barcode];
+      final old = replace ? null : find(p.barcode);
       if (old == null) {
+        if (!replace && !addNew) continue; // update-only: skip products not already in the list
         added++;
-      } else if (old.price != p.price || old.name != p.name) {
-        updated++;
+        _items[p.barcode] = p;
+      } else {
+        if (old.price != p.price || old.name != p.name) updated++;
+        _items[old.barcode] = Product(old.barcode, p.name, p.price);
       }
-      _items[p.barcode] = p;
     }
     lastFile = fileName ?? lastFile;
     await _save();
     return (added, updated);
   }
+
+  /// How many of these products are not in the list yet.
+  static int countNew(List<Product> list) => list.where((p) => find(p.barcode) == null).length;
 
   static Future<File> exportCsv() async {
     final dir = await getTemporaryDirectory();
