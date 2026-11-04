@@ -84,7 +84,7 @@ class Cfg {
 
   String s(String path, [String def = '']) {
     final v = raw(path);
-    return v == null ? def : '$v';
+    return v == null ? def : tr('$v'); // cached/default settings are Arabic: show English when chosen
   }
 
   bool b(String path, [bool def = false]) {
@@ -112,7 +112,7 @@ class Cfg {
   List<String> strings(String path) {
     final v = raw(path);
     if (v is! List) return [];
-    return v.map((e) => '$e').where((e) => e.isNotEmpty).toList();
+    return v.map((e) => tr('$e')).where((e) => e.isNotEmpty).toList();
   }
 
   List<int> ints(String path) {

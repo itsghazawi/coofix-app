@@ -1,3 +1,4 @@
+import 'i18n.dart';
 class Category {
   final int id;
   final String name;
@@ -189,7 +190,8 @@ num _pow10(int n) {
   return r;
 }
 
-String _clean(String s) => s
+String _clean(String s) => tr(_clean0(s));
+String _clean0(String s) => s
     .replaceAll('&amp;', '&')
     .replaceAll('&#8211;', '–')
     .replaceAll('&#8217;', '’')

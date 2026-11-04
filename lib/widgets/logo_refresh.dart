@@ -10,7 +10,9 @@ class LogoRefresh extends StatefulWidget {
   final Future<void> Function() onRefresh;
   final String asset;
   final double top;
-  const LogoRefresh({super.key, required this.child, required this.onRefresh, this.asset = 'assets/img/icon.png', this.top = 0});
+  /// false when the refresh sits under a fixed header (not at the very top of the screen).
+  final bool safeTop;
+  const LogoRefresh({super.key, required this.child, required this.onRefresh, this.asset = 'assets/img/icon.png', this.top = 0, this.safeTop = true});
   @override
   State<LogoRefresh> createState() => _LogoRefreshState();
 }
@@ -75,11 +77,11 @@ class _LogoRefreshState extends State<LogoRefresh> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final t = _busy ? 1.0 : (_pull / _trigger).clamp(0.0, 1.0);
-    final top = MediaQuery.paddingOf(context).top + widget.top;
+    final top = (widget.safeTop ? MediaQuery.paddingOf(context).top : 0) + widget.top;
     return Stack(children: [
       NotificationListener<ScrollNotification>(onNotification: _onScroll, child: widget.child),
       Positioned(
-        top: top + 10 + 18 * Curves.easeOut.transform(t),
+        top: top + 6 + 14 * Curves.easeOut.transform(t),
         left: 0,
         right: 0,
         child: IgnorePointer(

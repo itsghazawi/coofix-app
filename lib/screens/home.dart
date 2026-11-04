@@ -49,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
 
-    final slivers = <Widget>[const SliverToBoxAdapter(child: _Header())];
+    final slivers = <Widget>[];
     var sections = cfg.homeSections;
     if (sections.isEmpty) {
       sections = [for (final k in ['hero', 'categories', 'deals', 'values', 'featured', 'maintenance']) {'key': k, 'enabled': true}];
@@ -89,13 +89,18 @@ class _HomeScreenState extends State<HomeScreen> {
     slivers.add(const SliverToBoxAdapter(child: AppFooter()));
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
 
-    return LogoRefresh(
+    // Fixed header; the refresh appears under it and only the content moves.
+    return Column(children: [
+      const _Header(),
+      Expanded(child: LogoRefresh(
+      safeTop: false,
       onRefresh: _refresh,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         slivers: slivers,
       ),
-    );
+    )),
+    ]);
   }
 }
 
