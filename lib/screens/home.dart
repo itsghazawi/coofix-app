@@ -21,6 +21,7 @@ import 'more.dart';
 import 'search.dart';
 import 'shell.dart';
 import '../data/i18n.dart';
+import '../widgets/logo_refresh.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -88,8 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
     slivers.add(const SliverToBoxAdapter(child: AppFooter()));
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
 
-    return RefreshIndicator(
-      color: C.accent,
+    return LogoRefresh(
       onRefresh: _refresh,
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
