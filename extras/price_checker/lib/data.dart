@@ -39,7 +39,6 @@ class Settings {
   static bool get beep => _b('beep', true);
   static bool get vibrate => _b('vibrate', true);
   static bool get frontCamera => _b('front_camera', false);
-  static bool get kioskLock => _b('kiosk_lock', true);
   static bool get keepAwake => _b('keep_awake', true);
   static bool get hwScanner => _b('hw_scanner', true);
   static bool get showBarcode => _b('show_barcode', true);
@@ -464,12 +463,6 @@ class Sfx {
 
 class Device {
   static const _ch = MethodChannel('coofix/kiosk');
-  static Future<void> lock(bool on) async {
-    try {
-      await _ch.invokeMethod('lock', on);
-    } catch (_) {}
-  }
-
   static Future<void> keepAwake(bool on) async {
     try {
       await _ch.invokeMethod('awake', on);
@@ -478,6 +471,5 @@ class Device {
 
   static Future<void> applyKiosk() async {
     await keepAwake(Settings.keepAwake);
-    await lock(Settings.kioskLock);
   }
 }

@@ -66,7 +66,6 @@ class _AdminHomeState extends State<AdminHome> {
   @override
   void initState() {
     super.initState();
-    Device.lock(false);
     Device.keepAwake(false);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     AdminGuard.start();
@@ -1223,8 +1222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _switch('الكاميرا الأمامية', 'إذا التاب على ستاند ووجهه للزبون', Settings.frontCamera, 'front_camera'),
                 _switch('قارئ باركود خارجي', 'بلوتوث أو USB — يقرأ مباشرة من الشاشة الرئيسية', Settings.hwScanner, 'hw_scanner'),
               ]),
-              _section('القفل والشاشة', [
-                _switch('قفل التطبيق للزبون', 'تثبيت الشاشة، الزبون ما بيقدر يطلع من الكاشف', Settings.kioskLock, 'kiosk_lock'),
+              _section('الشاشة', [
                 _switch('إبقاء الشاشة مضاءة', 'أثناء عمل كاشف الأسعار', Settings.keepAwake, 'keep_awake'),
               ]),
               _section('الحساب', [
@@ -1251,7 +1249,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'beep',
                     'vibrate',
                     'front_camera',
-                    'kiosk_lock',
                     'keep_awake',
                     'hw_scanner',
                     'show_barcode',
@@ -1264,7 +1261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text('كاشف الأسعار · كوفيكس سوريا · الإصدار 1.0.0', style: b(12, c: muted)),
+                child: Text('كاشف الأسعار · كوفيكس سوريا · الإصدار 1.0.1', style: b(12, c: muted)),
               ),
             ],
           ),

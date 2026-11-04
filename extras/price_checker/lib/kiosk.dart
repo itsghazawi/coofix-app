@@ -75,7 +75,6 @@ class _StartScreenState extends State<StartScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    Device.lock(false);
     Device.keepAwake(false);
   }
 
@@ -358,21 +357,49 @@ class KioskHome extends StatefulWidget {
   State<KioskHome> createState() => _KioskHomeState();
 }
 
-class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin {
+class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat(reverse: true);
   late final AnimationController laser = AnimationController(vsync: this, duration: const Duration(milliseconds: 1900))..repeat(reverse: true);
   late final AnimationController intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..forward();
   Timer? _hold;
+  DateTime? _lastBack;
 
   @override
   void initState() {
     super.initState();
     HwScanner.onCode = showPrice;
+    WidgetsBinding.instance.addObserver(this);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Coming back from another app → hide status bar and buttons again.
+    if (state == AppLifecycleState.resumed) SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  /// Back pressed twice within 2 seconds → leave the app (no lock).
+  void _back() {
+    final now = DateTime.now();
+    if (_lastBack != null && now.difference(_lastBack!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastBack = now;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: inkLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        content: Text('اضغط رجوع مرة ثانية للخروج', textAlign: TextAlign.center, style: b(15, c: Colors.white, w: FontWeight.w500)),
+      ));
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (HwScanner.onCode == showPrice) HwScanner.onCode = null;
     _hold?.cancel();
     pulse.dispose();
@@ -392,7 +419,6 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin {
     final ok = await askAdmin(context);
     if (!ok || !mounted) return;
     HwScanner.onCode = null;
-    await Device.lock(false);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     navKey.currentState?.pushAndRemoveUntil(fadeRoute(const AdminHome()), (_) => false);
   }
@@ -436,6 +462,9 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin {
 
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (did, _) {
+        if (!did) _back();
+      },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: Scaffold(

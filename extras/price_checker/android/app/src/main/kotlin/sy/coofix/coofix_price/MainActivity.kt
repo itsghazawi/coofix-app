@@ -12,11 +12,6 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "coofix/kiosk").setMethodCallHandler { call, result ->
             try {
                 when (call.method) {
-                    "lock" -> {
-                        // Screen pinning: customer can't leave the app or open notifications.
-                        if (call.arguments == true) startLockTask() else stopLockTask()
-                        result.success(true)
-                    }
                     "awake" -> {
                         if (call.arguments == true) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
