@@ -10,6 +10,7 @@ import '../widgets/product_card.dart';
 import '../widgets/extras.dart';
 import '../widgets/ui.dart';
 import 'shell.dart';
+import '../data/i18n.dart';
 
 class ProductScreen extends StatefulWidget {
   final Product p;
@@ -92,12 +93,12 @@ class _ProductScreenState extends State<ProductScreen> {
                       Row(children: [
                         if (p.categoryName.isNotEmpty) Badge2(p.categoryName, bg: C.ink, fg: Colors.white),
                         const SizedBox(width: 8),
-                        if (p.price.onSale && Cfg.i.b('products.show_discount', true) && !Cfg.i.b('products.hide_prices')) Badge2('وفّر ${p.price.discountPct}%'),
+                        if (p.price.onSale && Cfg.i.b('products.show_discount', true) && !Cfg.i.b('products.hide_prices')) Badge2(trf('وفّر {0}%', [p.price.discountPct])),
                         const Spacer(),
                         Row(children: [
                           Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: p.inStock ? const Color(0xFF2BB673) : C.muted)),
                           const SizedBox(width: 6),
-                          Text(p.inStock ? 'متوفر' : 'غير متوفر', style: T.b(12.5, w: FontWeight.w600, c: p.inStock ? const Color(0xFF2BB673) : C.muted)),
+                          Text(p.inStock ? tr('متوفر') : tr('غير متوفر'), style: T.b(12.5, w: FontWeight.w600, c: p.inStock ? const Color(0xFF2BB673) : C.muted)),
                         ]),
                       ]),
                       const SizedBox(height: 14),
@@ -112,20 +113,20 @@ class _ProductScreenState extends State<ProductScreen> {
                       const _Perks(),
                       if (specs.isNotEmpty) ...[
                         const SizedBox(height: 26),
-                        Text('المواصفات الفنية', style: T.h(17)),
+                        Text(tr('المواصفات الفنية'), style: T.h(17)),
                         const SizedBox(height: 12),
                         _Specs(specs),
                       ],
                       if (about.isNotEmpty) ...[
                         const SizedBox(height: 26),
-                        Text('عن المنتج', style: T.h(17)),
+                        Text(tr('عن المنتج'), style: T.h(17)),
                         const SizedBox(height: 10),
                         Text(about, style: T.b(14.5, c: const Color(0xFF4A4F57), height: 1.85)),
                       ],
                       const SizedBox(height: 18),
                       Pressable(
                         scale: 0.98,
-                        onTap: () => openWhatsApp('مرحباً، لدي استفسار عن المنتج: ${p.name}${p.sku.isNotEmpty ? ' (${p.sku})' : ''}', number: Config.whatsappSupport),
+                        onTap: () => openWhatsApp(tr('مرحباً، لدي استفسار عن المنتج: ') + p.name + (p.sku.isNotEmpty ? ' (${p.sku})' : ''), number: Config.whatsappSupport),
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -136,7 +137,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           child: Row(children: [
                             const Icon(Icons.chat_rounded, color: Color(0xFF1DA851)),
                             const SizedBox(width: 12),
-                            Expanded(child: Text(Cfg.i.s('products.ask_text', 'عندك سؤال؟ اسأل خبير كوفيكس على واتساب'), style: T.b(14, w: FontWeight.w600, c: const Color(0xFF147A3B)))),
+                            Expanded(child: Text(Cfg.i.s('products.ask_text', tr('عندك سؤال؟ اسأل خبير كوفيكس على واتساب')), style: T.b(14, w: FontWeight.w600, c: const Color(0xFF147A3B)))),
                             const Icon(Icons.arrow_forward_rounded, color: Color(0xFF1DA851), size: 20),
                           ]),
                         ),
@@ -147,7 +148,7 @@ class _ProductScreenState extends State<ProductScreen> {
               ),
             ),
             if (related.isNotEmpty && Cfg.i.b('products.show_related', true)) ...[
-              const SliverToBoxAdapter(child: SectionHeader('منتجات مشابهة')),
+              SliverToBoxAdapter(child: SectionHeader(tr('منتجات مشابهة'))),
               SliverToBoxAdapter(
                 child: SizedBox(
                   height: 312,
@@ -211,7 +212,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       return;
                     }
                     Store.i.add(p, qty);
-                    cartToast(context, 'تمت إضافة $qty إلى السلة', () => openCartTab(context));
+                    cartToast(context, trf('تمت إضافة {0} إلى السلة', [qty]), () => openCartTab(context));
                   },
                   child: Container(
                     height: 56,
@@ -223,7 +224,7 @@ class _ProductScreenState extends State<ProductScreen> {
                     child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(cart ? Icons.shopping_bag_rounded : Icons.chat_rounded, color: C.on(C.accent), size: 21),
                       const SizedBox(width: 10),
-                      Text(cart ? 'أضف إلى السلة' : Cfg.i.s('order.button', 'اطلب عبر واتساب'), style: T.h(15.5, c: C.on(C.accent))),
+                      Text(cart ? tr('أضف إلى السلة') : Cfg.i.s('order.button', tr('اطلب عبر واتساب')), style: T.h(15.5, c: C.on(C.accent))),
                     ]),
                   ),
                 ),

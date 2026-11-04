@@ -6,6 +6,7 @@ import '../data/config.dart';
 import '../data/icons.dart';
 import '../data/models.dart';
 import '../theme.dart';
+import '../data/i18n.dart';
 
 /// Scales down slightly on press — gives every tappable surface a tactile feel.
 class Pressable extends StatefulWidget {
@@ -181,7 +182,7 @@ class PriceView extends StatelessWidget {
   Widget build(BuildContext context) {
     final cfg = Cfg.i;
     if (cfg.b('products.hide_prices') || price.price <= 0) {
-      return Text(cfg.s('products.hidden_price_text', 'اطلب السعر'), style: T.h(size * 0.85, c: C.accentDeep));
+      return Text(cfg.s('products.hidden_price_text', tr('اطلب السعر')), style: T.h(size * 0.85, c: C.accentDeep));
     }
     Widget amount(num v, double sz, Color col, {bool strike = false}) {
       final deco = strike ? TextDecoration.lineThrough : null;
@@ -312,7 +313,7 @@ Future<int?> askQuantity(BuildContext context, int current) {
       return AlertDialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('الكمية', style: T.h(18)),
+        title: Text(tr('الكمية'), style: T.h(18)),
         content: TextField(
           controller: c,
           autofocus: true,
@@ -328,8 +329,8 @@ Future<int?> askQuantity(BuildContext context, int current) {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('إلغاء', style: T.b(14, c: C.muted, w: FontWeight.w600))),
-          TextButton(onPressed: done, child: Text('تم', style: T.b(15, c: C.accentDeep, w: FontWeight.w700))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('إلغاء'), style: T.b(14, c: C.muted, w: FontWeight.w600))),
+          TextButton(onPressed: done, child: Text(tr('تم'), style: T.b(15, c: C.accentDeep, w: FontWeight.w700))),
         ],
       );
     },
@@ -352,8 +353,95 @@ void cartToast(BuildContext context, String msg, VoidCallback openCart) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
             openCart();
           },
-          child: Text('عرض السلة', style: T.h(13, c: C.ink)),
+          child: Text(tr('عرض السلة'), style: T.h(13, c: C.ink)),
         ),
       ]),
     ));
+}
+
+/// ع | EN language switch (Arabic on the right, English on the left).
+class LangSwitch extends StatelessWidget {
+  final bool dark;
+  const LangSwitch({super.key, this.dark = false});
+
+  Future<void> _set(BuildContext context, String c) async {
+    if (Lang.code.value == c) return;
+    HapticFeedback.selectionClick();
+    await Lang.set(c);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget seg(String c, String label, Widget flag) {
+      final on = Lang.code.value == c;
+      return GestureDetector(
+        onTap: () => _set(context, c),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 9),
+          decoration: BoxDecoration(
+            color: on ? (dark ? C.accent : C.ink) : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text(label, style: T.h(13.5, c: on ? (dark ? C.ink : Colors.white) : (dark ? Colors.white.withValues(alpha: 0.7) : C.muted))),
+            const SizedBox(width: 6),
+            ClipRRect(borderRadius: BorderRadius.circular(3), child: SizedBox(width: 20, height: 14, child: flag)),
+          ]),
+        ),
+      );
+    }
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: dark ? Colors.white.withValues(alpha: 0.08) : C.card,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: dark ? Colors.white.withValues(alpha: 0.14) : C.line),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          seg('ar', 'ع', const CustomPaint(painter: _FlagSY())),
+          const SizedBox(width: 2),
+          seg('en', 'EN', const CustomPaint(painter: _FlagUS())),
+        ]),
+      ),
+    );
+  }
+}
+
+class _FlagSY extends CustomPainter {
+  const _FlagSY();
+  @override
+  void paint(Canvas c, Size s) {
+    final h = s.height / 3;
+    c.drawRect(Rect.fromLTWH(0, 0, s.width, h), Paint()..color = const Color(0xFF007A3D));
+    c.drawRect(Rect.fromLTWH(0, h, s.width, h), Paint()..color = Colors.white);
+    c.drawRect(Rect.fromLTWH(0, h * 2, s.width, h), Paint()..color = Colors.black);
+    final p = Paint()..color = const Color(0xFFCE1126);
+    for (final x in [0.3, 0.5, 0.7]) {
+      c.drawCircle(Offset(s.width * x, s.height / 2), h * 0.32, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+class _FlagUS extends CustomPainter {
+  const _FlagUS();
+  @override
+  void paint(Canvas c, Size s) {
+    final h = s.height / 13;
+    for (var i = 0; i < 13; i++) {
+      c.drawRect(Rect.fromLTWH(0, i * h, s.width, h), Paint()..color = i.isEven ? const Color(0xFFB22234) : Colors.white);
+    }
+    c.drawRect(Rect.fromLTWH(0, 0, s.width * 0.4, h * 7), Paint()..color = const Color(0xFF3C3B6E));
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
 }

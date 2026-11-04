@@ -7,6 +7,7 @@ import '../data/store.dart';
 import '../theme.dart';
 import 'brand.dart';
 import 'ui.dart';
+import '../data/i18n.dart';
 
 /// Premium "كود المنتج" tag — tap to copy.
 class SkuTag extends StatefulWidget {
@@ -49,7 +50,7 @@ class _SkuTagState extends State<SkuTag> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Center(child: Text(copied ? 'تم النسخ' : 'كود المنتج', style: T.b(12, w: FontWeight.w600, c: Colors.white.withValues(alpha: copied ? 1 : 0.6)))),
+              child: Center(child: Text(copied ? tr('تم النسخ') : tr('كود المنتج'), style: T.b(12, w: FontWeight.w600, c: Colors.white.withValues(alpha: copied ? 1 : 0.6)))),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -135,10 +136,10 @@ class AppFooter extends StatelessWidget {
         const SizedBox(height: 10),
         Text(Config.brand, style: T.h(17, c: Colors.white)),
         const SizedBox(height: 2),
-        Text(cfg.s('general.tagline', 'الوكيل المعتمد لعدّة كوفيكس'), textAlign: TextAlign.center, style: T.b(12, c: Colors.white.withValues(alpha: 0.5))),
+        Text(cfg.s('general.tagline', tr('الوكيل المعتمد لعدّة كوفيكس')), textAlign: TextAlign.center, style: T.b(12, c: Colors.white.withValues(alpha: 0.5))),
         const SizedBox(height: 18),
         Row(children: [
-          btn(Icons.chat_rounded, 'واتساب', () => openWhatsApp('مرحباً ${Config.brand}', number: Config.whatsappSupport), wa: true),
+          btn(Icons.chat_rounded, tr('واتساب'), () => openWhatsApp(trf('مرحباً {0}', [Config.brand]), number: Config.whatsappSupport), wa: true),
           const SizedBox(width: 10),
           btn(Icons.call_rounded, Config.pretty(Config.phone), () => openUrl('tel:+${Config.phone}')),
         ]),
@@ -163,8 +164,8 @@ class AppFooter extends StatelessWidget {
         const SizedBox(height: 16),
         Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
         const SizedBox(height: 12),
-        Text('© ${DateTime.now().year} ${Config.brand} — الوكالة الرسمية في سوريا', textAlign: TextAlign.center, style: T.b(11.5, c: Colors.white.withValues(alpha: 0.4))),
-        Text('الإصدار $kAppVersion', style: T.b(10.5, c: Colors.white.withValues(alpha: 0.3))),
+        Text(trf('© {0} {1} — الوكالة الرسمية في سوريا', [DateTime.now().year, Config.brand]), textAlign: TextAlign.center, style: T.b(11.5, c: Colors.white.withValues(alpha: 0.4))),
+        Text(trf('الإصدار {0}', [kAppVersion]), style: T.b(10.5, c: Colors.white.withValues(alpha: 0.3))),
       ]),
     );
   }

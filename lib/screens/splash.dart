@@ -9,6 +9,7 @@ import '../data/store.dart';
 import '../theme.dart';
 import '../widgets/brand.dart';
 import 'shell.dart';
+import '../data/i18n.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -105,9 +106,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                       child: Column(children: [
                         Text(Cfg.i.s('brand.splash_title', 'COOFIX'), style: T.h(30, c: Colors.white, w: FontWeight.w800).copyWith(letterSpacing: 8)),
                         const SizedBox(height: 6),
-                        Text(Cfg.i.s('brand.splash_sub', 'كوفيكس سوريا'), style: T.h(17, c: Colors.white.withValues(alpha: 0.9), w: FontWeight.w500)),
+                        Text(Cfg.i.s('brand.splash_sub', tr('كوفيكس سوريا')), style: T.h(17, c: Colors.white.withValues(alpha: 0.9), w: FontWeight.w500)),
                         const SizedBox(height: 4),
-                        Text(Cfg.i.s('brand.splash_note', 'الوكيل الحصري والرسمي في سوريا'), textAlign: TextAlign.center, style: T.b(13, c: Colors.white.withValues(alpha: 0.5))),
+                        Text(Cfg.i.s('brand.splash_note', tr('الوكيل الحصري والرسمي في سوريا')), textAlign: TextAlign.center, style: T.b(13, c: Colors.white.withValues(alpha: 0.5))),
                       ]),
                     ),
                   ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'i18n.dart';
 
 /// Version of this build — compared against the panel's update settings.
 const kAppVersion = '1.4.1';
@@ -34,7 +35,7 @@ class Cfg {
     _data = _defaults;
     try {
       final p = await SharedPreferences.getInstance();
-      final cached = p.getString('cfg_cache');
+      final cached = p.getString(Lang.en ? 'cfg_cache_en' : 'cfg_cache');
       if (cached != null) _data = _merge(_defaults, jsonDecode(cached));
     } catch (_) {}
   }
@@ -42,7 +43,7 @@ class Cfg {
   /// Fetch the latest config from the site.
   Future<void> refresh() async {
     try {
-      final r = await http.get(Uri.parse('$endpoint?t=${DateTime.now().millisecondsSinceEpoch ~/ 60000}')).timeout(const Duration(seconds: 10));
+      final r = await http.get(Uri.parse('$endpoint?t=${DateTime.now().millisecondsSinceEpoch ~/ 60000}${Lang.q}'), headers: Lang.headers).timeout(const Duration(seconds: 10));
       if (r.statusCode == 200) {
         final body = utf8.decode(r.bodyBytes);
         final j = jsonDecode(body);
@@ -51,7 +52,7 @@ class Cfg {
           remote = true;
           changes.value++;
           final p = await SharedPreferences.getInstance();
-          await p.setString('cfg_cache', body);
+          await p.setString(Lang.en ? 'cfg_cache_en' : 'cfg_cache', body);
         }
       }
     } catch (_) {}

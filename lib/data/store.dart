@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'api.dart';
 import 'config.dart';
 import 'models.dart';
+import 'i18n.dart';
 
 /// Cart + favourites, persisted on device.
 class Store extends ChangeNotifier {
@@ -82,24 +83,24 @@ Future<void> openUrl(String url) async {
 String orderMessage(List<MapEntry<Product, int>> items, num total, Price? fmt, {String? name, String? city, String? phone, String? note}) {
   final cfg = Cfg.i;
   final b = StringBuffer();
-  final header = cfg.s('order.header', 'مرحباً كوفيكس سوريا 👋\nأرغب بطلب المنتجات التالية من التطبيق:');
+  final header = cfg.s('order.header', tr('مرحباً كوفيكس سوريا 👋\nأرغب بطلب المنتجات التالية من التطبيق:'));
   if (header.isNotEmpty) b.write('$header\n\n');
   final hide = cfg.b('products.hide_prices');
   var i = 1;
   for (final e in items) {
     b.writeln('$i) ${e.key.name}');
-    if (e.key.sku.isNotEmpty) b.writeln('   الرمز: ${e.key.sku}');
-    b.writeln(hide || e.key.price.price <= 0 ? '   الكمية: ${e.value}' : '   الكمية: ${e.value} × ${e.key.price.fmt(e.key.price.price)}');
+    if (e.key.sku.isNotEmpty) b.writeln(trf('   الرمز: {0}', [e.key.sku]));
+    b.writeln(hide || e.key.price.price <= 0 ? trf('   الكمية: {0}', [e.value]) : trf('   الكمية: {0} × {1}', [e.value, e.key.price.fmt(e.key.price.price)]));
     i++;
   }
   if (fmt != null && !hide && cfg.b('order.show_total', true) && total > 0) {
-    b.writeln('\n${cfg.s('order.total_label', 'الإجمالي التقريبي')}: ${fmt.fmt(total)}');
+    b.writeln('\n${cfg.s('order.total_label', tr('الإجمالي التقريبي'))}: ${fmt.fmt(total)}');
   }
-  if (name != null && name.isNotEmpty) b.writeln('الاسم: $name');
-  if (city != null && city.isNotEmpty) b.writeln('العنوان: $city');
-  if (phone != null && phone.isNotEmpty) b.writeln('الهاتف: $phone');
-  if (note != null && note.isNotEmpty) b.writeln('ملاحظات: $note');
-  final footer = cfg.s('order.footer', 'شكراً لكم.');
+  if (name != null && name.isNotEmpty) b.writeln(trf('الاسم: {0}', [name]));
+  if (city != null && city.isNotEmpty) b.writeln(trf('العنوان: {0}', [city]));
+  if (phone != null && phone.isNotEmpty) b.writeln(trf('الهاتف: {0}', [phone]));
+  if (note != null && note.isNotEmpty) b.writeln(trf('ملاحظات: {0}', [note]));
+  final footer = cfg.s('order.footer', tr('شكراً لكم.'));
   if (footer.isNotEmpty) b.write('\n$footer');
   return b.toString().trim();
 }

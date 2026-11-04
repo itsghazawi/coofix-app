@@ -12,6 +12,7 @@ import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
 import 'shell.dart';
+import '../data/i18n.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -29,9 +30,9 @@ class CartScreen extends StatelessWidget {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('سلة الطلب', style: T.h(28)),
+                  Text(tr('سلة الطلب'), style: T.h(28)),
                   const SizedBox(height: 4),
-                  Text(items.isEmpty ? 'سلتك فارغة' : '${Store.i.count} قطعة جاهزة للطلب', style: T.b(13.5, c: C.muted)),
+                  Text(items.isEmpty ? tr('سلتك فارغة') : trf('{0} قطعة جاهزة للطلب', [Store.i.count]), style: T.b(13.5, c: C.muted)),
                 ]),
               ),
               if (items.isNotEmpty)
@@ -39,17 +40,17 @@ class CartScreen extends StatelessWidget {
                   onTap: () => Store.i.clear(),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Text('إفراغ', style: T.b(14, w: FontWeight.w600, c: C.muted)),
+                    child: Text(tr('إفراغ'), style: T.b(14, w: FontWeight.w600, c: C.muted)),
                   ),
                 ),
             ]),
           ),
           Expanded(
             child: items.isEmpty
-                ? const _Empty(
+                ? _Empty(
                     icon: Icons.shopping_bag_outlined,
-                    title: 'لم تضف أي منتج بعد',
-                    sub: 'تصفّح عدد كوفيكس وأضف ما تحتاجه، ثم أرسل طلبك عبر واتساب بضغطة واحدة.',
+                    title: tr('لم تضف أي منتج بعد'),
+                    sub: tr('تصفّح عدد كوفيكس وأضف ما تحتاجه، ثم أرسل طلبك عبر واتساب بضغطة واحدة.'),
                   )
                 : ListView.separated(
                     physics: const BouncingScrollPhysics(),
@@ -86,7 +87,7 @@ class CartScreen extends StatelessWidget {
                                     PriceView(e.key.price, size: 14.5),
                                   ]),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 _Stepper(
                                   qty: e.value,
                                   onPlus: () => Store.i.setQty(e.key, e.value + 1),
@@ -112,7 +113,7 @@ class _Stepper extends StatelessWidget {
   final int qty;
   final VoidCallback onPlus, onMinus;
   final ValueChanged<int> onSet;
-  const _Stepper({required this.qty, required this.onPlus, required this.onMinus, required this.onSet});
+  _Stepper({required this.qty, required this.onPlus, required this.onMinus, required this.onSet});
   @override
   Widget build(BuildContext context) {
     Widget b(IconData i, VoidCallback f, {bool dark = false}) => Pressable(
@@ -134,9 +135,9 @@ class _Stepper extends StatelessWidget {
           if (n != null) onSet(n);
         },
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          constraints: const BoxConstraints(minWidth: 48),
-          padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
+          margin: EdgeInsets.symmetric(vertical: 6),
+          constraints: BoxConstraints(minWidth: 48),
+          padding: EdgeInsets.fromLTRB(6, 5, 6, 5),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -144,7 +145,7 @@ class _Stepper extends StatelessWidget {
           ),
           child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
             Text('$qty', style: T.h(15)),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Icon(Icons.edit_rounded, size: 12, color: C.accentDeep),
           ]),
         ),
@@ -155,7 +156,7 @@ class _Stepper extends StatelessWidget {
 }
 
 class _Checkout extends StatefulWidget {
-  const _Checkout({super.key});
+  _Checkout({super.key});
   @override
   State<_Checkout> createState() => _CheckoutState();
 }
@@ -170,21 +171,21 @@ class CouponResult {
 Future<Object> checkCoupon(String code, {bool use = false}) async {
   try {
     final r = await http
-        .post(Uri.parse('${Config.site}/wp-json/coofix-app/v1/coupon'),
+        .post(Uri.parse('${Config.site}/wp-json/coofix-app/v1/coupon${Lang.en ? '?lang=en' : ''}'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'code': code.trim(),
               'use': use ? 1 : 0,
               'items': [for (final e in Store.i.items) {'id': e.key.id, 'qty': e.value}],
             }))
-        .timeout(const Duration(seconds: 15));
+        .timeout(Duration(seconds: 15));
     final j = jsonDecode(utf8.decode(r.bodyBytes));
     if (j is Map && j['ok'] == true) {
       return CouponResult('${j['code']}', '${j['label'] ?? ''}', (j['discount'] as num?) ?? 0, '${j['message'] ?? ''}');
     }
-    return (j is Map ? j['message'] : null)?.toString() ?? 'الكود غير صحيح';
+    return (j is Map ? j['message'] : null)?.toString() ?? tr('الكود غير صحيح');
   } catch (_) {
-    return 'تعذّر التحقق من الكود، تحقق من الإنترنت';
+    return tr('تعذّر التحقق من الكود، تحقق من الإنترنت');
   }
 }
 
@@ -229,12 +230,12 @@ class _CheckoutState extends State<_Checkout> {
 
           Future<void> send() async {
             String? miss;
-            if (gov == null) miss = 'المحافظة';
-            if (miss == null && area.text.trim().isEmpty) miss = 'المنطقة';
-            if (miss == null && name.text.trim().isEmpty) miss = 'الاسم الثلاثي';
-            if (miss == null && phone.text.trim().isEmpty) miss = 'رقم الهاتف';
+            if (gov == null) miss = tr('المحافظة');
+            if (miss == null && area.text.trim().isEmpty) miss = tr('المنطقة');
+            if (miss == null && name.text.trim().isEmpty) miss = tr('الاسم الثلاثي');
+            if (miss == null && phone.text.trim().isEmpty) miss = tr('رقم الهاتف');
             if (miss != null) {
-              setSheet(() => error = 'الرجاء تعبئة $miss');
+              setSheet(() => error = trf('الرجاء تعبئة {0}', [miss]));
               return;
             }
             setSheet(() {
@@ -246,10 +247,10 @@ class _CheckoutState extends State<_Checkout> {
             final number = 'ORD-${now.year % 100}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
             var text = orderMessage(items, Store.i.total, fmt, name: name.text.trim(), city: '$gov — ${area.text.trim()}', phone: phone.text.trim());
             if (coupon != null) {
-              text += '\n\nكود الحسم: ${coupon!.code} (${coupon!.label})\nالحسم: ${fmt.fmt(coupon!.discount)}\nالإجمالي بعد الحسم: ${fmt.fmt(Store.i.total - coupon!.discount)}';
+              text += trf('\n\nكود الحسم: {0} ({1})\nالحسم: {2}\nالإجمالي بعد الحسم: {3}', [coupon!.code, coupon!.label, fmt.fmt(coupon!.discount), fmt.fmt(Store.i.total - coupon!.discount)]);
               unawaited(checkCoupon(coupon!.code, use: true));
             }
-            text = 'رقم الطلب: $number\n$text';
+            text = trf('رقم الطلب: {0}\n{1}', [number, text]);
             await openWhatsApp(text);
             if (c.mounted) Navigator.pop(c);
           }
@@ -259,23 +260,23 @@ class _CheckoutState extends State<_Checkout> {
             padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(c).bottom),
             child: Container(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + MediaQuery.paddingOf(c).bottom),
-              decoration: BoxDecoration(color: C.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+              decoration: BoxDecoration(color: C.bg, borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
               child: SingleChildScrollView(
                 keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Center(child: Container(width: 44, height: 5, decoration: BoxDecoration(color: C.line, borderRadius: BorderRadius.circular(5)))),
-                  const SizedBox(height: 18),
-                  Text(cfg.s('order.sheet_title', 'إتمام الطلب'), style: T.h(21)),
-                  const SizedBox(height: 4),
-                  Text(cfg.s('order.sheet_note', 'سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.'), style: T.b(13, c: C.muted)),
-                  const SizedBox(height: 18),
-                  Text('معلومات الشحن', style: T.h(15)),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 18),
+                  Text(cfg.s('order.sheet_title', tr('إتمام الطلب')), style: T.h(21)),
+                  SizedBox(height: 4),
+                  Text(cfg.s('order.sheet_note', tr('سيتم إرسال طلبك إلى فريق كوفيكس على واتساب لتأكيده.')), style: T.b(13, c: C.muted)),
+                  SizedBox(height: 18),
+                  Text(tr('معلومات الشحن'), style: T.h(15)),
+                  SizedBox(height: 10),
                   DropdownButtonFormField<String>(
                     initialValue: gov,
                     isExpanded: true,
-                    hint: Text('المحافظة *', style: T.b(14.5, c: C.muted)),
-                    items: [for (final g in const ['دمشق', 'ريف دمشق', 'حلب', 'حمص', 'حماة', 'اللاذقية', 'طرطوس', 'إدلب', 'درعا', 'السويداء', 'القنيطرة', 'دير الزور', 'الرقة', 'الحسكة']) DropdownMenuItem(value: g, child: Text(g, style: T.b(15, w: FontWeight.w500)))],
+                    hint: Text(tr('المحافظة *'), style: T.b(14.5, c: C.muted)),
+                    items: [for (final g in [tr('دمشق'), tr('ريف دمشق'), tr('حلب'), tr('حمص'), tr('حماة'), tr('اللاذقية'), tr('طرطوس'), tr('إدلب'), tr('درعا'), tr('السويداء'), tr('القنيطرة'), tr('دير الزور'), tr('الرقة'), tr('الحسكة')]) DropdownMenuItem(value: g, child: Text(g, style: T.b(15, w: FontWeight.w500)))],
                     onChanged: (v) => setSheet(() => gov = v),
                     borderRadius: BorderRadius.circular(16),
                     decoration: InputDecoration(
@@ -289,15 +290,15 @@ class _CheckoutState extends State<_Checkout> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Field(ctrl: area, label: 'المنطقة *', icon: Icons.location_on_rounded, action: TextInputAction.next),
+                  Field(ctrl: area, label: tr('المنطقة *'), icon: Icons.location_on_rounded, action: TextInputAction.next),
                   const SizedBox(height: 12),
-                  Field(ctrl: name, label: 'الاسم الثلاثي *', icon: Icons.person_rounded, action: TextInputAction.next),
+                  Field(ctrl: name, label: tr('الاسم الثلاثي *'), icon: Icons.person_rounded, action: TextInputAction.next),
                   const SizedBox(height: 12),
-                  Field(ctrl: phone, label: 'رقم الهاتف *', icon: Icons.phone_rounded, type: TextInputType.phone, action: TextInputAction.done, ltr: true),
+                  Field(ctrl: phone, label: tr('رقم الهاتف *'), icon: Icons.phone_rounded, type: TextInputType.phone, action: TextInputAction.done, ltr: true),
                   const SizedBox(height: 12),
                   if (cfg.b('order.coupons', true) && !hide) ...[
                     Row(children: [
-                      Expanded(child: Field(ctrl: code, label: 'كود الحسم (إن وجد)', icon: Icons.local_offer_rounded)),
+                      Expanded(child: Field(ctrl: code, label: tr('كود الحسم (إن وجد)'), icon: Icons.local_offer_rounded)),
                       const SizedBox(width: 8),
                       Pressable(
                         onTap: checking ? null : apply,
@@ -308,7 +309,7 @@ class _CheckoutState extends State<_Checkout> {
                           decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(16)),
                           child: checking
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white))
-                              : Text('تطبيق', style: T.h(14, c: Colors.white)),
+                              : Text(tr('تطبيق'), style: T.h(14, c: Colors.white)),
                         ),
                       ),
                     ]),
@@ -322,7 +323,7 @@ class _CheckoutState extends State<_Checkout> {
                           const Icon(Icons.check_circle_rounded, color: Color(0xFF16794A), size: 20),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text('${coupon!.code} • حسم ${coupon!.label} = ${fmt.fmt(coupon!.discount)}', style: T.b(13, c: const Color(0xFF16794A), w: FontWeight.w700)),
+                            child: Text(trf('{0} • حسم {1} = {2}', [coupon!.code, coupon!.label, fmt.fmt(coupon!.discount)]), style: T.b(13, c: const Color(0xFF16794A), w: FontWeight.w700)),
                           ),
                           IconButton(
                             visualDensity: VisualDensity.compact,
@@ -343,17 +344,17 @@ class _CheckoutState extends State<_Checkout> {
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: C.line)),
                       child: Column(children: [
                         if (coupon != null) ...[
-                          Row(children: [Text('المجموع', style: T.b(13.5, c: C.muted)), const Spacer(), Text(fmt.fmt(sub), textDirection: TextDirection.ltr, style: T.b(13.5, c: C.muted))]),
+                          Row(children: [Text(tr('المجموع'), style: T.b(13.5, c: C.muted)), const Spacer(), Text(fmt.fmt(sub), textDirection: TextDirection.ltr, style: T.b(13.5, c: C.muted))]),
                           const SizedBox(height: 4),
                           Row(children: [
-                            Text('الحسم', style: T.b(13.5, c: const Color(0xFF16794A), w: FontWeight.w600)),
+                            Text(tr('الحسم'), style: T.b(13.5, c: const Color(0xFF16794A), w: FontWeight.w600)),
                             const Spacer(),
                             Text('- ${fmt.fmt(coupon!.discount)}', textDirection: TextDirection.ltr, style: T.b(13.5, c: const Color(0xFF16794A), w: FontWeight.w700)),
                           ]),
                           const SizedBox(height: 6),
                         ],
                         Row(children: [
-                          Text('الإجمالي', style: T.h(15)),
+                          Text(tr('الإجمالي'), style: T.h(15)),
                           const Spacer(),
                           Text(fmt.fmt(sub - (coupon?.discount ?? 0)), textDirection: TextDirection.ltr, style: T.h(18)),
                         ]),
@@ -364,7 +365,7 @@ class _CheckoutState extends State<_Checkout> {
                       padding: const EdgeInsets.only(bottom: 10),
                       child: Text(error!, style: T.b(13, c: const Color(0xFFD64545), w: FontWeight.w600)),
                     ),
-                  WhatsAppButton(label: 'أرسل الطلب عبر واتساب', onTap: sending ? () {} : send),
+                  WhatsAppButton(label: tr('أرسل الطلب عبر واتساب'), onTap: sending ? () {} : send),
                 ]),
               ),
             ),
@@ -394,7 +395,7 @@ class _CheckoutState extends State<_Checkout> {
           Expanded(
             flex: 4,
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(cfg.s('order.total_label', 'الإجمالي التقريبي'), style: T.b(11.5, c: Colors.white.withValues(alpha: 0.6))),
+              Text(cfg.s('order.total_label', tr('الإجمالي التقريبي')), style: T.b(11.5, c: Colors.white.withValues(alpha: 0.6))),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: AlignmentDirectional.centerStart,
@@ -407,7 +408,7 @@ class _CheckoutState extends State<_Checkout> {
             ]),
           ),
         if (showTotal) const SizedBox(width: 10),
-        Expanded(flex: 6, child: WhatsAppButton(label: cfg.s('order.button', 'اطلب عبر واتساب'), onTap: _order, height: 50)),
+        Expanded(flex: 6, child: WhatsAppButton(label: cfg.s('order.button', tr('اطلب عبر واتساب')), onTap: _order, height: 50)),
       ]),
     );
   }
@@ -506,7 +507,7 @@ class EmptyState extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 13),
                 decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(16)),
-                child: Text('ابدأ التسوّق', style: T.b(14, w: FontWeight.w700, c: Colors.white)),
+                child: Text(tr('ابدأ التسوّق'), style: T.b(14, w: FontWeight.w700, c: Colors.white)),
               ),
             ),
           ]),

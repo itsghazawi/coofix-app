@@ -5,9 +5,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/config.dart';
 import 'screens/splash.dart';
 import 'theme.dart';
+import 'data/i18n.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Lang.load();
   await Cfg.i.boot();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -19,13 +21,16 @@ class CoofixApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
+    return ValueListenableBuilder<String>(
+      valueListenable: Lang.code,
+      builder: (_, lang, _) => ValueListenableBuilder<int>(
       valueListenable: Cfg.i.changes,
       builder: (_, _, _) => MaterialApp(
-      title: Cfg.i.s('general.app_name', 'كوفيكس سوريا'),
+      key: ValueKey(lang),
+      title: Cfg.i.s('general.app_name', tr('كوفيكس سوريا')),
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      locale: const Locale('ar'),
+      locale: Locale(lang),
       supportedLocales: const [Locale('ar'), Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -38,6 +43,7 @@ class CoofixApp extends StatelessWidget {
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: child,
       ),
+    ),
     ),
     );
   }

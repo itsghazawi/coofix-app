@@ -8,9 +8,9 @@ import '../theme.dart';
 import '../widgets/ui.dart';
 import 'cart.dart';
 import 'categories.dart';
-import 'favorites.dart';
 import 'home.dart';
 import 'more.dart';
+import '../data/i18n.dart';
 
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -23,7 +23,7 @@ class _ShellState extends State<Shell> {
   static _ShellState? current;
   int tab = 0;
 
-  static const keys = ['home', 'categories', 'cart', 'favorites', 'more'];
+  static const keys = ['home', 'categories', 'cart', 'maintenance', 'more'];
   bool navVisible = true;
 
   void go(int i) {
@@ -57,7 +57,7 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     if (Cfg.i.b('general.maintenance.enabled')) return const MaintenanceModeScreen();
-    final pages = const [HomeScreen(), CategoriesScreen(), CartScreen(), FavoritesScreen(), MoreScreen()];
+    final pages = const [HomeScreen(), CategoriesScreen(), CartScreen(), MaintenanceScreen(), MoreScreen()];
     return PopScope(
       canPop: tab == 0,
       onPopInvokedWithResult: (did, _) {
@@ -101,16 +101,15 @@ class _NavBar extends StatelessWidget {
   const _NavBar({required this.index, required this.onTap});
 
   static List<(IconData, IconData, String)> get items => [
-        (Icons.home_rounded, Icons.home_outlined, Cfg.i.s('nav.home', 'الرئيسية')),
-        (Icons.grid_view_rounded, Icons.grid_view_outlined, Cfg.i.s('nav.categories', 'الأقسام')),
-        (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, Cfg.i.s('nav.cart', 'السلة')),
-        (Icons.favorite_rounded, Icons.favorite_border_rounded, Cfg.i.s('nav.favorites', 'المفضلة')),
-        (Icons.menu_rounded, Icons.menu_rounded, Cfg.i.s('nav.more', 'المزيد')),
+        (Icons.home_rounded, Icons.home_outlined, Cfg.i.s('nav.home', tr('الرئيسية'))),
+        (Icons.grid_view_rounded, Icons.grid_view_outlined, Cfg.i.s('nav.categories', tr('الأقسام'))),
+        (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, Cfg.i.s('nav.cart', tr('السلة'))),
+        (Icons.build_rounded, Icons.build_outlined, Cfg.i.s('nav.maintenance', tr('الصيانة'))),
+        (Icons.menu_rounded, Icons.menu_rounded, Cfg.i.s('nav.more', tr('المزيد'))),
       ];
 
   static bool visible(int i) {
     if (i == 2) return Cfg.i.b('products.allow_cart', true);
-    if (i == 3) return Cfg.i.b('nav.show_favorites', true);
     return true;
   }
 

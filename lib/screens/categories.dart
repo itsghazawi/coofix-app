@@ -6,6 +6,7 @@ import '../data/models.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
+import '../data/i18n.dart';
 
 void openCategory(BuildContext context, Category c) {
   Navigator.of(context).push(MaterialPageRoute(builder: (_) => CategoryProductsScreen(c)));
@@ -25,9 +26,9 @@ class CategoriesScreen extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.fromLTRB(20, top + 20, 20, 8),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('الأقسام', style: T.h(28)),
+              Text(tr('الأقسام'), style: T.h(28)),
               const SizedBox(height: 4),
-              Text('${Api.i.products.length} منتج في ${cats.length} أقسام', style: T.b(13.5, c: C.muted)),
+              Text(trf('{0} منتج في {1} أقسام', [Api.i.products.length, cats.length]), style: T.b(13.5, c: C.muted)),
             ]),
           ),
         ),
@@ -95,8 +96,8 @@ class _CategoryTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(c.name, style: T.h(18, c: fg)),
-                    const SizedBox(height: 4),
-                    Text('${items.length} منتج', style: T.b(13, c: dark ? Colors.white.withValues(alpha: 0.55) : C.muted)),
+                    SizedBox(height: 4),
+                    Text(trf('{0} منتج', [items.length]), style: T.b(13, c: dark ? Colors.white.withValues(alpha: 0.55) : C.muted)),
                   ],
                 ),
               ),
@@ -107,7 +108,7 @@ class _CategoryTile extends StatelessWidget {
                   color: dark ? C.accent : C.ink,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
               ),
             ]),
           ),
@@ -119,7 +120,7 @@ class _CategoryTile extends StatelessWidget {
 
 class CategoryProductsScreen extends StatefulWidget {
   final Category c;
-  const CategoryProductsScreen(this.c, {super.key});
+  CategoryProductsScreen(this.c, {super.key});
   @override
   State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
 }
@@ -147,7 +148,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   @override
   Widget build(BuildContext context) {
     final list = items;
-    const labels = {_Sort.def: 'المقترح', _Sort.low: 'الأقل سعراً', _Sort.high: 'الأعلى سعراً', _Sort.deal: 'العروض'};
+    final labels = {_Sort.def: tr('المقترح'), _Sort.low: tr('الأقل سعراً'), _Sort.high: tr('الأعلى سعراً'), _Sort.deal: tr('العروض')};
     return Scaffold(
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -205,7 +206,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           if (list.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Center(child: Text('لا توجد منتجات في هذا القسم حالياً', style: T.b(14, c: C.muted))),
+              child: Center(child: Text(tr('لا توجد منتجات في هذا القسم حالياً'), style: T.b(14, c: C.muted))),
             )
           else
             SliverPadding(

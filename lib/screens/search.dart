@@ -5,6 +5,7 @@ import '../data/config.dart';
 import '../theme.dart';
 import '../widgets/product_card.dart';
 import '../widgets/ui.dart';
+import '../data/i18n.dart';
 
 class SearchScreen extends StatefulWidget {
   final String initial;
@@ -19,7 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<String> get suggestions {
     final l = Cfg.i.strings('pages.search_suggestions');
-    return l.isEmpty ? const ['مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'] : l;
+    return l.isEmpty ? const ['مثقب', 'جلاخة', 'شحن', 'كمبريسور', 'منشار', 'مولدة', 'طقم'].map(tr).toList() : l;
   }
 
   @override
@@ -58,7 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     onChanged: (v) => setState(() => q = v),
                     style: T.b(15, w: FontWeight.w500),
                     decoration: InputDecoration(
-                      hintText: 'ابحث في منتجات كوفيكس',
+                      hintText: tr('ابحث في منتجات كوفيكس'),
                       hintStyle: T.b(14.5, c: C.muted),
                       prefixIcon: const Icon(Icons.search_rounded, color: C.muted),
                       suffixIcon: q.isEmpty
@@ -86,7 +87,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Expanded(
           child: q.trim().isEmpty
               ? ListView(padding: const EdgeInsets.all(20), children: [
-                  Text('عمليات بحث شائعة', style: T.h(16)),
+                  Text(tr('عمليات بحث شائعة'), style: T.h(16)),
                   const SizedBox(height: 14),
                   Wrap(spacing: 8, runSpacing: 10, children: [
                     for (final s in suggestions)
@@ -108,7 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ]),
                 ])
               : res.isEmpty
-                  ? Center(child: Text('لا توجد نتائج لـ "$q"', style: T.b(14, c: C.muted)))
+                  ? Center(child: Text(trf('لا توجد نتائج لـ "{0}"', [q]), style: T.b(14, c: C.muted)))
                   : GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

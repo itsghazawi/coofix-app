@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'config.dart';
 import 'models.dart';
 import 'icons.dart';
+import 'i18n.dart';
 
 /// Contact & site settings (from the control panel, with safe fallbacks).
 class Config {
@@ -31,7 +32,7 @@ class Config {
   }
 
   static String get phoneDisplay => pretty(whatsapp);
-  static String get brand => Cfg.i.s('general.app_name', 'كوفيكس سوريا');
+  static String get brand => Cfg.i.s('general.app_name', tr('كوفيكس سوريا'));
 }
 
 /// Loads catalogue from the WooCommerce Store API (public, read-only),
@@ -53,8 +54,8 @@ class Api {
     final prefs = await SharedPreferences.getInstance();
     try {
       final res = await Future.wait([
-        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products?per_page=100')),
-        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100')),
+        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products?per_page=100${Lang.q}'), headers: Lang.headers),
+        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100${Lang.q}'), headers: Lang.headers),
       ]).timeout(const Duration(seconds: 12));
       if (res[0].statusCode == 200 && res[1].statusCode == 200) {
         final p = utf8.decode(res[0].bodyBytes);
@@ -63,14 +64,14 @@ class Api {
         if (products.isNotEmpty) {
           live = true;
           await _topUpWithDemo();
-          await prefs.setString('cache_p', p);
-          await prefs.setString('cache_c', c);
+          await prefs.setString('cache_p${Lang.en ? '_en' : ''}', p);
+          await prefs.setString('cache_c${Lang.en ? '_en' : ''}', c);
           return;
         }
       }
     } catch (_) {}
-    final cp = prefs.getString('cache_p');
-    final cc = prefs.getString('cache_c');
+    final cp = prefs.getString('cache_p${Lang.en ? '_en' : ''}');
+    final cc = prefs.getString('cache_c${Lang.en ? '_en' : ''}');
     if (cp != null && cc != null) {
       _parse(cp, cc);
       if (products.isNotEmpty) {

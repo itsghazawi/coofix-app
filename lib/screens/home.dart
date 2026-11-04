@@ -20,6 +20,7 @@ import 'categories.dart';
 import 'more.dart';
 import 'search.dart';
 import 'shell.dart';
+import '../data/i18n.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,27 +62,27 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_HeroCarouselState.slides.isNotEmpty) slivers.add(const SliverToBoxAdapter(child: _HeroCarousel()));
         case 'categories':
           if (api.categories.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'تسوّق حسب القسم'), subtitle: sub(sec), action: 'الكل', onAction: () => Shell.of(context)?.goKey('categories'))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('تسوّق حسب القسم')), subtitle: sub(sec), action: tr('الكل'), onAction: () => Shell.of(context)?.goKey('categories'))));
           slivers.add(SliverToBoxAdapter(child: _CategoryStrip(api.categories)));
         case 'deals':
           final deals = api.deals;
           if (deals.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'عروض حصرية'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('عروض حصرية')), subtitle: sub(sec))));
           slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(deals, tag: 'deal')));
         case 'values':
           slivers.add(const SliverToBoxAdapter(child: _Values()));
         case 'latest':
           final l = api.latest;
           if (l.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'وصل حديثاً'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('وصل حديثاً')), subtitle: sub(sec))));
           slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(l, tag: 'new')));
         case 'featured':
           final f = api.featured;
           if (f.isEmpty) break;
-          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, 'الأكثر طلباً'), subtitle: sub(sec))));
+          slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('الأكثر طلباً')), subtitle: sub(sec))));
           slivers.add(grid(f, 'feat'));
         case 'maintenance':
-          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, 'مركز الصيانة المعتمد'), sub: sub(sec) ?? 'تابع حالة عدّتك برقم الطلب أو الهاتف')));
+          slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, tr('مركز الصيانة المعتمد')), sub: sub(sec) ?? tr('تابع حالة عدّتك برقم الطلب أو الهاتف'))));
       }
     }
     slivers.add(const SliverToBoxAdapter(child: AppFooter()));
@@ -113,12 +114,14 @@ class _Header extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(Cfg.i.s('general.welcome_small', 'أهلاً بك في'), style: T.b(12.5, c: C.muted)),
-                Text(Cfg.i.s('general.welcome_big', 'كوفيكس سوريا'), style: T.h(19)),
+                Text(Cfg.i.s('general.welcome_small', tr('أهلاً بك في')), style: T.b(12.5, c: C.muted)),
+                Text(Cfg.i.s('general.welcome_big', tr('كوفيكس سوريا')), style: T.h(19)),
               ]),
             ),
+            const LangSwitch(),
+            const SizedBox(width: 8),
             Pressable(
-              onTap: () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport),
+              onTap: () => openWhatsApp(trf('مرحباً {0} 👋', [Config.brand]), number: Config.whatsappSupport),
               child: Container(
                 width: 46,
                 height: 46,
@@ -147,7 +150,7 @@ class _Header extends StatelessWidget {
                   child: Row(children: [
                     const Icon(Icons.search_rounded, color: C.muted),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(Cfg.i.s('general.search_hint', 'ابحث عن مثقب، جلاخة، كمبريسور...'), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(14, c: C.muted))),
+                    Expanded(child: Text(Cfg.i.s('general.search_hint', tr('ابحث عن مثقب، جلاخة، كمبريسور...')), maxLines: 1, overflow: TextOverflow.ellipsis, style: T.b(14, c: C.muted))),
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(color: C.ink, borderRadius: BorderRadius.circular(11)),

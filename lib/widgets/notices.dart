@@ -10,6 +10,7 @@ import '../theme.dart';
 import 'actions.dart';
 import 'brand.dart';
 import 'ui.dart';
+import '../data/i18n.dart';
 
 /// Full-screen notice shown instead of the app while maintenance mode is on.
 class MaintenanceModeScreen extends StatelessWidget {
@@ -27,19 +28,19 @@ class MaintenanceModeScreen extends StatelessWidget {
             const SizedBox(height: 28),
             Icon(Icons.construction_rounded, color: C.accent, size: 34),
             const SizedBox(height: 14),
-            Text(Cfg.i.s('general.maintenance.title', 'التطبيق قيد التحديث'), textAlign: TextAlign.center, style: T.h(22, c: Colors.white)),
+            Text(Cfg.i.s('general.maintenance.title', tr('التطبيق قيد التحديث')), textAlign: TextAlign.center, style: T.h(22, c: Colors.white)),
             const SizedBox(height: 10),
             Text(Cfg.i.s('general.maintenance.message'), textAlign: TextAlign.center, style: T.b(14.5, c: Colors.white.withValues(alpha: 0.65), height: 1.8)),
             const SizedBox(height: 28),
             Pressable(
-              onTap: () => openWhatsApp('مرحباً ${Config.brand} 👋', number: Config.whatsappSupport),
+              onTap: () => openWhatsApp(trf('مرحباً {0} 👋', [Config.brand]), number: Config.whatsappSupport),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
                 decoration: BoxDecoration(color: C.green, borderRadius: BorderRadius.circular(18)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   const Icon(Icons.chat_rounded, color: Colors.white),
                   const SizedBox(width: 10),
-                  Text('تواصل معنا', style: T.h(15, c: Colors.white)),
+                  Text(tr('تواصل معنا'), style: T.h(15, c: Colors.white)),
                 ]),
               ),
             ),
@@ -81,12 +82,12 @@ Future<bool> maybeShowUpdate(BuildContext context) async {
               child: Icon(Icons.system_update_rounded, color: C.ink, size: 32),
             ),
             const SizedBox(height: 16),
-            Text(cfg.s('general.update.title', 'تحديث جديد متوفر'), textAlign: TextAlign.center, style: T.h(19)),
+            Text(cfg.s('general.update.title', tr('تحديث جديد متوفر')), textAlign: TextAlign.center, style: T.h(19)),
             const SizedBox(height: 8),
             Text(cfg.s('general.update.message'), textAlign: TextAlign.center, style: T.b(14, c: C.muted, height: 1.7)),
             const SizedBox(height: 20),
             if (url.isNotEmpty)
-              _Btn(label: 'تحديث الآن', onTap: () => openUrl(url)),
+              _Btn(label: tr('تحديث الآن'), onTap: () => openUrl(url)),
             if (!force) ...[
               const SizedBox(height: 8),
               TextButton(
@@ -94,7 +95,7 @@ Future<bool> maybeShowUpdate(BuildContext context) async {
                   p.setBool(skipKey, true);
                   Navigator.pop(c);
                 },
-                child: Text('لاحقاً', style: T.b(14, c: C.muted, w: FontWeight.w600)),
+                child: Text(tr('لاحقاً'), style: T.b(14, c: C.muted, w: FontWeight.w600)),
               ),
             ],
           ]),

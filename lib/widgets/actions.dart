@@ -7,6 +7,7 @@ import '../screens/more.dart';
 import '../screens/search.dart';
 import '../screens/shell.dart';
 import 'product_card.dart';
+import '../data/i18n.dart';
 
 /// Runs a tap action configured in the control panel
 /// (banners, announcement bar, popup).
@@ -29,7 +30,7 @@ Future<void> runAction(BuildContext context, String type, String value) async {
     case 'tab':
       Shell.of(context)?.goKey(v.isEmpty ? 'home' : v);
     case 'whatsapp':
-      await openWhatsApp(v.isEmpty ? 'مرحباً ${Config.brand} 👋' : v, number: Config.whatsappSupport);
+      await openWhatsApp(v.isEmpty ? trf('مرحباً {0} 👋', [Config.brand]) : v, number: Config.whatsappSupport);
     case 'phone':
       await openUrl('tel:+${(v.isEmpty ? Config.phone : v).replaceAll(RegExp(r'\D'), '')}');
     case 'url':
