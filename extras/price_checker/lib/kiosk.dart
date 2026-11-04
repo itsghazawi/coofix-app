@@ -660,7 +660,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
     detectionTimeoutMs: 150,
     formats: const [
       BarcodeFormat.ean13, BarcodeFormat.ean8, BarcodeFormat.upcA, BarcodeFormat.upcE, BarcodeFormat.code128,
-      BarcodeFormat.code39, BarcodeFormat.code93, BarcodeFormat.itf2of5, BarcodeFormat.codabar, BarcodeFormat.qrCode, BarcodeFormat.dataMatrix,
+      BarcodeFormat.code39, BarcodeFormat.code93, BarcodeFormat.itf2of5, BarcodeFormat.codabar, // 1D barcodes only — QR codes are ignored
     ],
   );
   late final AnimationController laser = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);

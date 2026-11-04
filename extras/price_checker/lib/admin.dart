@@ -1261,7 +1261,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Center(
-                child: Text('كاشف الأسعار · كوفيكس سوريا · الإصدار 1.0.1', style: b(12, c: muted)),
+                child: Text('كاشف الأسعار · كوفيكس سوريا · الإصدار 1.0.2', style: b(12, c: muted)),
               ),
             ],
           ),
