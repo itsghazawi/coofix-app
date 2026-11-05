@@ -120,6 +120,14 @@ class Db {
     await tmp.rename(_file.path);
   }
 
+  /// Test helper: fill the list in memory without touching files.
+  static void debugSet(List<Product> list) {
+    _items
+      ..clear()
+      ..addEntries(list.map((p) => MapEntry(p.barcode, p)));
+    _reindex();
+  }
+
   static Product? find(String raw) {
     final b = normBarcode(raw);
     if (b.isEmpty) return null;

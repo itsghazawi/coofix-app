@@ -57,6 +57,13 @@ void showPrice(String code) {
   navKey.currentState?.pushAndRemoveUntil(fadeRoute(ResultScreen(code: normBarcode(code), product: p), ms: 320), (r) => r.isFirst);
 }
 
+/// Show a product picked from the code search.
+void showProduct(Product p) {
+  Sfx.play(true);
+  Stats.hit(p.barcode, p);
+  navKey.currentState?.pushAndRemoveUntil(fadeRoute(ResultScreen(code: p.barcode, product: p), ms: 320), (r) => r.isFirst);
+}
+
 void enterKiosk() {
   Device.applyKiosk();
   navKey.currentState?.pushAndRemoveUntil(fadeRoute(const KioskHome(), ms: 600), (_) => false);
@@ -408,6 +415,11 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, Wi
     super.dispose();
   }
 
+  void _search() {
+    HapticFeedback.selectionClick();
+    Navigator.of(context).push(fadeRoute(const CodeSearchScreen(), ms: 300));
+  }
+
   void _scan() {
     HapticFeedback.selectionClick();
     Navigator.of(context).push(fadeRoute(const ScannerScreen(), ms: 300));
@@ -445,6 +457,19 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, Wi
       child: Image.asset('assets/img/logo_dark.png', height: 58 * s),
     );
     final emblem = ScanEmblem(size: (land ? 330 : 250) * s, pulse: pulse, laser: laser);
+    final search = SearchPill(s: s, onTap: _search);
+    final backBtn = Material(
+      color: Colors.white.withValues(alpha: 0.06),
+      shape: CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: _secret,
+        child: Padding(
+          padding: EdgeInsets.all(12 * s),
+          child: Icon(Icons.arrow_back_rounded, color: Colors.white.withValues(alpha: 0.55), size: 24 * s),
+        ),
+      ),
+    );
     final texts = Column(crossAxisAlignment: land ? CrossAxisAlignment.start : CrossAxisAlignment.center, children: [
       Text(Settings.welcomeTitle, textAlign: land ? TextAlign.start : TextAlign.center, style: h(34 * s, c: Colors.white, w: FontWeight.w800, height: 1.25)),
       SizedBox(height: 10 * s),
@@ -481,7 +506,7 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, Wi
                         Expanded(
                           flex: 6,
                           child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            _stagger(0.0, logo),
+                            _stagger(0.0, Row(children: [logo, SizedBox(width: 24 * s), search])),
                             SizedBox(height: 40 * s),
                             _stagger(0.25, texts),
                             SizedBox(height: 40 * s),
@@ -495,8 +520,11 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, Wi
                         child: ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: 640 * s),
                           child: Column(children: [
-                            SizedBox(height: 14 * s),
-                            _stagger(0.0, logo),
+                            _stagger(0.0, Row(children: [
+                              backBtn,
+                              Expanded(child: Center(child: SizedBox(height: 46 * s, child: FittedBox(child: logo)))),
+                              search,
+                            ])),
                             const Spacer(flex: 3),
                             _stagger(0.1, emblem),
                             const Spacer(flex: 3),
@@ -512,23 +540,7 @@ class _KioskHomeState extends State<KioskHome> with TickerProviderStateMixin, Wi
               ),
             ),
             // Back to the control panel (asks for the admin password).
-            Positioned(
-              top: 14 * s, right: 14 * s,
-              child: SafeArea(
-                child: Material(
-                  color: Colors.white.withValues(alpha: 0.06),
-                  shape: CircleBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _secret,
-                    child: Padding(
-                      padding: EdgeInsets.all(12 * s),
-                      child: Icon(Icons.arrow_back_rounded, color: Colors.white.withValues(alpha: 0.55), size: 24 * s),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            if (land) Positioned(top: 14 * s, right: 14 * s, child: SafeArea(child: backBtn)),
             ]),
           ),
         ),
@@ -992,6 +1004,7 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
       ]);
     } else {
       final (whole, cents) = splitPrice(p.price);
+      final (name, pcode) = splitName(p.name);
       body = Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         _in(0.0, Container(
           padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 7 * s),
@@ -1004,12 +1017,20 @@ class _ResultScreenState extends State<ResultScreen> with TickerProviderStateMix
         )),
         SizedBox(height: 16 * s),
         _in(0.08, Text(
-          p.name,
+          name,
           textAlign: TextAlign.center,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: h((p.name.length > 60 ? 30 : p.name.length > 32 ? 36 : 44) * s, c: Colors.white, w: FontWeight.w800, height: 1.35),
+          style: h((name.length > 60 ? 30 : name.length > 32 ? 36 : 44) * s, c: Colors.white, w: FontWeight.w800, height: 1.35),
         )),
+        if (pcode.isNotEmpty) ...[
+          SizedBox(height: 12 * s),
+          _in(0.14, Container(
+            padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 6 * s),
+            decoration: BoxDecoration(color: amber, borderRadius: BorderRadius.circular(12 * s)),
+            child: Text(pcode, textDirection: TextDirection.ltr, style: h(20 * s, c: ink, w: FontWeight.w800, height: 1.25).copyWith(letterSpacing: 1.5)),
+          )),
+        ],
         SizedBox(height: 30 * s),
         _in(0.2, _PriceCard(whole: whole, cents: cents, price: p.price, s: s, intro: intro, shine: shine), dy: 40, scale: 0.85),
         if (Settings.showBarcode) ...[SizedBox(height: 22 * s), _in(0.45, _BarcodeChip(code: p.barcode, s: s))],
@@ -1136,6 +1157,291 @@ class _BarcodeChip extends StatelessWidget {
         SizedBox(width: 8 * s),
         Text(code, textDirection: TextDirection.ltr, style: b(15 * s, c: Colors.white.withValues(alpha: 0.6), w: FontWeight.w500).copyWith(letterSpacing: 1.5)),
       ]),
+    );
+  }
+}
+
+// ================================================================ search by product code
+/// "ابحث بالكود" pill shown next to the logo.
+class SearchPill extends StatelessWidget {
+  final double s;
+  final VoidCallback onTap;
+  const SearchPill({super.key, required this.s, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: amber.withValues(alpha: 0.12),
+      shape: StadiumBorder(side: BorderSide(color: amber.withValues(alpha: 0.45))),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14 * s, vertical: 11 * s),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.search_rounded, color: amber, size: 21 * s),
+            SizedBox(width: 6 * s),
+            Text('ابحث بالكود', style: h(14 * s, c: amber, w: FontWeight.w700, height: 1.1)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Splits "اسم المنتج / CF-01-01" into (name, code).
+(String, String) splitName(String full) {
+  final i = full.lastIndexOf('/');
+  if (i < 0) return (full.trim(), '');
+  return (full.substring(0, i).trim(), full.substring(i + 1).trim());
+}
+
+String _key(String v) => v.toUpperCase().replaceAll(RegExp(r'[\s\-_./]'), '');
+
+class CodeSearchScreen extends StatefulWidget {
+  const CodeSearchScreen({super.key});
+  @override
+  State<CodeSearchScreen> createState() => _CodeSearchScreenState();
+}
+
+class _CodeSearchScreenState extends State<CodeSearchScreen> {
+  final q = TextEditingController();
+  final focus = FocusNode();
+  List<(Product, String, String)> results = [];
+  Timer? _idle;
+  void Function(String)? _prevHw;
+
+  @override
+  void initState() {
+    super.initState();
+    _prevHw = HwScanner.onCode;
+    HwScanner.onCode = null; // keyboard typing goes to the search box
+    _touch();
+    WidgetsBinding.instance.addPostFrameCallback((_) => focus.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    _idle?.cancel();
+    HwScanner.onCode = _prevHw ?? showPrice;
+    super.dispose();
+  }
+
+  /// Back to the price checker after 60 s without activity.
+  void _touch() {
+    _idle?.cancel();
+    _idle = Timer(const Duration(seconds: 60), _close);
+  }
+
+  void _close() {
+    if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
+  }
+
+  void _run(String v) {
+    _touch();
+    final k = _key(v);
+    if (k.isEmpty) {
+      setState(() => results = []);
+      return;
+    }
+    final out = <(Product, String, String)>[];
+    for (final p in Db.all) {
+      final (name, code) = splitName(p.name);
+      final hay = code.isNotEmpty ? _key(code) : _key(p.name);
+      if (hay.contains(k)) out.add((p, name, code));
+    }
+    // Natural sort by code: CFA-101-2 before CFA-101-10, exact/prefix matches first.
+    int rank((Product, String, String) e) => _key(e.$3).startsWith(k) ? 0 : 1;
+    out.sort((a, b) {
+      final r = rank(a).compareTo(rank(b));
+      return r != 0 ? r : _natural(a.$3, b.$3);
+    });
+    setState(() => results = out.take(200).toList());
+  }
+
+  static int _natural(String a, String b) {
+    final re = RegExp(r'(\d+)|(\D+)');
+    final x = re.allMatches(a.toUpperCase()).map((m) => m[0]!).toList(), y = re.allMatches(b.toUpperCase()).map((m) => m[0]!).toList();
+    for (var i = 0; i < math.min(x.length, y.length); i++) {
+      final nx = int.tryParse(x[i]), ny = int.tryParse(y[i]);
+      final c = (nx != null && ny != null) ? nx.compareTo(ny) : x[i].compareTo(y[i]);
+      if (c != 0) return c;
+    }
+    return x.length.compareTo(y.length);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final s = math.min(size.width / 420, 1.6).clamp(0.85, 1.6).toDouble();
+    final typed = q.text.trim().isNotEmpty;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (did, _) {
+        if (!did) _close();
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: ink,
+          resizeToAvoidBottomInset: true,
+          body: DarkBackdrop(
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 900 * s),
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(20 * s, 14 * s, 20 * s, 0),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      Row(children: [
+                        Material(
+                          color: Colors.white.withValues(alpha: 0.07),
+                          shape: StadiumBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.14))),
+                          child: InkWell(
+                            customBorder: const StadiumBorder(),
+                            onTap: _close,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 11 * s),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(Icons.arrow_back_rounded, color: Colors.white, size: 21 * s),
+                                SizedBox(width: 6 * s),
+                                Text('رجوع', style: h(15 * s, c: Colors.white, w: FontWeight.w600, height: 1.1)),
+                              ]),
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Image.asset('assets/img/logo_dark.png', height: 40 * s),
+                      ]),
+                      SizedBox(height: 22 * s),
+                      Text('ابحث بكود المنتج', style: h(26 * s, c: Colors.white, w: FontWeight.w800)),
+                      SizedBox(height: 4 * s),
+                      Text('اكتب الكود كامل أو جزء منه، مثلاً CF-01', style: b(15 * s, c: Colors.white.withValues(alpha: 0.55))),
+                      SizedBox(height: 16 * s),
+                      TextField(
+                        controller: q,
+                        focusNode: focus,
+                        onChanged: _run,
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.left,
+                        textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [TextInputFormatter.withFunction((o, n) => n.copyWith(text: n.text.toUpperCase()))],
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        keyboardType: TextInputType.visiblePassword,
+                        style: h(24 * s, c: Colors.white, w: FontWeight.w700, height: 1.2).copyWith(letterSpacing: 1.5),
+                        cursorColor: amber,
+                        decoration: InputDecoration(
+                          hintText: 'CF-01-01',
+                          hintTextDirection: TextDirection.ltr,
+                          hintStyle: h(24 * s, c: Colors.white.withValues(alpha: 0.2), w: FontWeight.w600, height: 1.2).copyWith(letterSpacing: 1.5),
+                          prefixIcon: Padding(padding: EdgeInsets.symmetric(horizontal: 14 * s), child: Icon(Icons.search_rounded, color: amber, size: 28 * s)),
+                          suffixIcon: typed
+                              ? IconButton(
+                                  onPressed: () {
+                                    q.clear();
+                                    _run('');
+                                    focus.requestFocus();
+                                  },
+                                  icon: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.6), size: 24 * s),
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: Colors.black.withValues(alpha: 0.28),
+                          contentPadding: EdgeInsets.symmetric(vertical: 20 * s, horizontal: 16 * s),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22 * s), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12))),
+                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(22 * s), borderSide: const BorderSide(color: amber, width: 1.8)),
+                        ),
+                      ),
+                      SizedBox(height: 12 * s),
+                      if (typed)
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4 * s, vertical: 4 * s),
+                          child: Text(results.isEmpty ? '' : '${results.length} نتيجة', style: b(14 * s, c: amber, w: FontWeight.w600)),
+                        ),
+                      Expanded(
+                        child: !typed
+                            ? _hint(s, Icons.keyboard_rounded, 'اكتب كود المنتج للبحث')
+                            : results.isEmpty
+                                ? _hint(s, Icons.search_off_rounded, 'ما في منتج بهالكود\nتأكد من الكود أو اسأل أحد موظفينا')
+                                : NotificationListener<ScrollNotification>(
+                                    onNotification: (_) {
+                                      _touch();
+                                      return false;
+                                    },
+                                    child: ListView.separated(
+                                      padding: EdgeInsets.only(top: 6 * s, bottom: 24 * s),
+                                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                                      itemCount: results.length,
+                                      separatorBuilder: (_, _) => SizedBox(height: 10 * s),
+                                      itemBuilder: (_, i) => _ResultTile(item: results[i], s: s, onTap: () => showProduct(results[i].$1)),
+                                    ),
+                                  ),
+                      ),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _hint(double s, IconData icon, String text) => Center(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Icon(icon, color: Colors.white.withValues(alpha: 0.25), size: 56 * s),
+          SizedBox(height: 12 * s),
+          Text(text, textAlign: TextAlign.center, style: b(16 * s, c: Colors.white.withValues(alpha: 0.45))),
+        ]),
+      );
+}
+
+class _ResultTile extends StatelessWidget {
+  final (Product, String, String) item;
+  final double s;
+  final VoidCallback onTap;
+  const _ResultTile({required this.item, required this.s, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final (p, name, code) = item;
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22 * s),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22 * s),
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.fromLTRB(16 * s, 14 * s, 16 * s, 14 * s),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(22 * s), border: Border.all(color: amber.withValues(alpha: 0.6), width: 1.6)),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, maxLines: 2, overflow: TextOverflow.ellipsis, style: h(17 * s, c: ink, w: FontWeight.w700, height: 1.35)),
+                if (code.isNotEmpty) ...[
+                  SizedBox(height: 6 * s),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10 * s, vertical: 3 * s),
+                    decoration: BoxDecoration(color: ink, borderRadius: BorderRadius.circular(8 * s)),
+                    child: Text(code, textDirection: TextDirection.ltr, style: h(13 * s, c: amber, w: FontWeight.w700, height: 1.3).copyWith(letterSpacing: 1)),
+                  ),
+                ],
+              ]),
+            ),
+            SizedBox(width: 12 * s),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Padding(
+                  padding: EdgeInsets.only(top: 4 * s, right: 2 * s),
+                  child: Text('\$', style: h(18 * s, c: amberDeep, w: FontWeight.w800, height: 1)),
+                ),
+                Text(fmtPrice(p.price).substring(1), style: h(30 * s, c: ink, w: FontWeight.w800, height: 1.1)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
     );
   }
 }
