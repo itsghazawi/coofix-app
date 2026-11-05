@@ -56,12 +56,19 @@ class Api {
       // Whole catalogue: the Store API returns at most 100 items per page,
       // so walk every page. Options (variations) are fetched the same way and
       // merged into their parent product under "_variants".
+      // Products and categories first; options (variations) are best-effort so a
+      // slow connection never hides the catalogue. Only the fields the app uses
+      // are requested, which keeps every page small.
       final res = await Future.wait([
         _allPages('${Config.site}/wp-json/wc/store/v1/products?per_page=100${Lang.q}'),
         _allPages('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100${Lang.q}'),
-        _allPages('${Config.site}/wp-json/wc/store/v1/products?type=variation&per_page=100${Lang.q}'),
-      ]).timeout(const Duration(seconds: 45));
-      final prods = res[0], cats = res[1], vars = res[2];
+      ]);
+      List<dynamic>? varsList;
+      try {
+        varsList = await _allPages('${Config.site}/wp-json/wc/store/v1/products?type=variation&per_page=100&_fields=id,parent,sku,prices,is_in_stock${Lang.q}');
+      } catch (_) {}
+      final res3 = [res[0], res[1], varsList];
+      final prods = res3[0], cats = res3[1], vars = res3[2];
       if (prods != null && cats != null) {
         if (vars != null && vars.isNotEmpty) {
           final byParent = <int, Map<String, dynamic>>{};
@@ -107,16 +114,30 @@ class Api {
 
   /// Fetches every page of a Store API list (first page tells the page count).
   Future<List<dynamic>?> _allPages(String url) async {
-    Future<http.Response> get(int page) => http.get(Uri.parse('$url&page=$page'), headers: Lang.headers);
-    final first = await get(1);
-    if (first.statusCode != 200) return null;
-    final out = <dynamic>[...(jsonDecode(utf8.decode(first.bodyBytes)) as List)];
-    final pages = int.tryParse(first.headers['x-wp-totalpages'] ?? '') ?? 1;
-    for (var start = 2; start <= pages; start += 4) {
-      final batch = await Future.wait([for (var pg = start; pg < start + 4 && pg <= pages; pg++) get(pg)]);
-      for (final r in batch) {
-        if (r.statusCode != 200) return null;
-        out.addAll(jsonDecode(utf8.decode(r.bodyBytes)) as List);
+    final sep = url.contains('?') ? '&' : '?';
+    Future<List<dynamic>?> page(int n, [void Function(int)? total]) async {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+          final r = await http.get(Uri.parse('$url${sep}page=$n'), headers: Lang.headers).timeout(const Duration(seconds: 30));
+          if (r.statusCode == 200) {
+            total?.call(int.tryParse(r.headers['x-wp-totalpages'] ?? '') ?? 1);
+            return jsonDecode(utf8.decode(r.bodyBytes)) as List;
+          }
+          if (r.statusCode == 400 && n > 1) return const []; // past the last page
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    var pages = 1;
+    final first = await page(1, (t) => pages = t);
+    if (first == null) return null;
+    final out = <dynamic>[...first];
+    for (var start = 2; start <= pages; start += 3) {
+      final batch = await Future.wait([for (var pg = start; pg < start + 3 && pg <= pages; pg++) page(pg)]);
+      for (final l in batch) {
+        if (l == null) return null;
+        out.addAll(l);
       }
     }
     return out;
