@@ -60,7 +60,7 @@ class Api {
       // slow connection never hides the catalogue. Only the fields the app uses
       // are requested, which keeps every page small.
       final res = await Future.wait([
-        _allPages('${Config.site}/wp-json/wc/store/v1/products?per_page=100${Lang.q}'),
+        _allPages('${Config.site}/wp-json/wc/store/v1/products?per_page=100&_fields=id,name,sku,short_description,description,prices,images,categories,attributes,variations,is_in_stock,permalink${Lang.q}'),
         _allPages('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100${Lang.q}'),
       ]);
       List<dynamic>? varsList;
