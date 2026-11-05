@@ -129,6 +129,10 @@ class _AddButton extends StatelessWidget {
     return Pressable(
       scale: 0.85,
       onTap: () {
+        if (p.hasOptions) {
+          openProduct(context, p);
+          return;
+        }
         Store.i.add(p);
         cartToast(context, tr('أضيف إلى السلة'), () => openCartTab(context));
       },

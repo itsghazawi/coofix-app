@@ -50,6 +50,18 @@ class _HomeScreenState extends State<HomeScreen> {
         );
 
     final slivers = <Widget>[];
+    // A row of products for every main section, so the home page shows the whole range.
+    var showcased = false;
+    void showcase() {
+      if (showcased) return;
+      showcased = true;
+      for (final c in api.topCategories) {
+        final items = api.byCategory(c.id);
+        if (items.isEmpty) continue;
+        slivers.add(SliverToBoxAdapter(child: SectionHeader(c.name, subtitle: trf('{0} منتج', [items.length]), action: tr('الكل'), onAction: () => openCategory(context, c))));
+        slivers.add(SliverToBoxAdapter(child: _HorizontalProducts(items.take(12).toList(), tag: 'sec${c.id}')));
+      }
+    }
     var sections = cfg.homeSections;
     if (sections.isEmpty) {
       sections = [for (final k in ['hero', 'categories', 'deals', 'values', 'featured', 'maintenance']) {'key': k, 'enabled': true}];
@@ -64,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         case 'categories':
           if (api.categories.isEmpty) break;
           slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('تسوّق حسب القسم')), subtitle: sub(sec), action: tr('الكل'), onAction: () => Shell.of(context)?.goKey('categories'))));
-          slivers.add(SliverToBoxAdapter(child: _CategoryStrip(api.categories)));
+          slivers.add(SliverToBoxAdapter(child: _CategoryStrip(api.topCategories)));
         case 'deals':
           final deals = api.deals;
           if (deals.isEmpty) break;
@@ -82,10 +94,12 @@ class _HomeScreenState extends State<HomeScreen> {
           if (f.isEmpty) break;
           slivers.add(SliverToBoxAdapter(child: SectionHeader(t(sec, tr('الأكثر طلباً')), subtitle: sub(sec))));
           slivers.add(grid(f, 'feat'));
+          showcase();
         case 'maintenance':
           slivers.add(SliverToBoxAdapter(child: _MaintenanceBanner(title: t(sec, tr('مركز الصيانة المعتمد')), sub: sub(sec) ?? tr('تابع حالة عدّتك برقم الطلب أو الهاتف'))));
       }
     }
+    showcase();
     slivers.add(const SliverToBoxAdapter(child: AppFooter()));
     slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 120)));
 

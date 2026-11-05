@@ -82,6 +82,25 @@ class Price {
   }
 }
 
+/// One purchasable option of a variable product (battery kit, size…).
+class Variant {
+  final int id;
+  final String sku;
+  final Price price;
+  final bool inStock;
+  final Map<String, String> attrs;
+  Variant({required this.id, required this.sku, required this.price, this.inStock = true, this.attrs = const {}});
+  String get label => attrs.values.where((v) => v.isNotEmpty).join(' – ');
+
+  factory Variant.fromJson(Map<String, dynamic> j, Map<String, String> attrs) => Variant(
+        id: j['id'] as int,
+        sku: j['sku']?.toString() ?? '',
+        price: Price.fromJson((j['prices'] as Map?)?.cast<String, dynamic>() ?? {}),
+        inStock: (j['is_in_stock'] ?? true) as bool,
+        attrs: attrs,
+      );
+}
+
 class Product {
   final int id;
   final String name;
@@ -95,6 +114,12 @@ class Product {
   final String permalink;
   final List<MapEntry<String, String>> specs;
   final bool featured;
+  /// Options the customer picks from (empty for simple products).
+  final List<Variant> variants;
+  /// Names of the attributes used for options, e.g. «القياس».
+  final List<String> optionNames;
+  /// Set when this Product stands for one option of a variable product.
+  final int parentId;
 
   Product({
     required this.id,
@@ -109,13 +134,34 @@ class Product {
     this.permalink = '',
     this.specs = const [],
     this.featured = false,
+    this.variants = const [],
+    this.optionNames = const [],
+    this.parentId = 0,
   });
+
+  bool get hasOptions => variants.isNotEmpty;
+
+  /// The option shown first: the one whose code is the series code, else the first in stock.
+  Variant? get defaultVariant {
+    if (variants.isEmpty) return null;
+    for (final v in variants) {
+      if (v.sku == sku && v.inStock) return v;
+    }
+    return variants.firstWhere((v) => v.inStock, orElse: () => variants.first);
+  }
+
+  /// A cart-ready Product for one option: own id, code and price, parent's look.
+  Product forVariant(Variant v) => Product(
+        id: v.id, name: v.label.isEmpty ? name : '$name – ${v.label}', price: v.price, shortDesc: shortDesc, desc: desc,
+        images: images, categories: categories, inStock: v.inStock, sku: v.sku, permalink: permalink, specs: specs,
+        featured: featured, parentId: id);
 
   String? get cover => images.isEmpty ? null : images.first;
 
   Product copyWith({List<Category>? categories}) => Product(
         id: id, name: name, price: price, shortDesc: shortDesc, desc: desc, images: images,
-        categories: categories ?? this.categories, inStock: inStock, sku: sku, permalink: permalink, specs: specs, featured: featured);
+        categories: categories ?? this.categories, inStock: inStock, sku: sku, permalink: permalink, specs: specs, featured: featured,
+        variants: variants, optionNames: optionNames, parentId: parentId);
 
   /// Attributes plus any "name: value" lines written in the description.
   List<MapEntry<String, String>> specsWith({bool parseDescription = true}) {
@@ -148,7 +194,12 @@ class Product {
       if (s is String && s.isNotEmpty) imgs.add(s);
     }
     final specs = <MapEntry<String, String>>[];
+    final optionNames = <String>[];
     for (final a in (j['attributes'] as List? ?? [])) {
+      if (a is Map && a['has_variations'] == true && (j['variations'] as List? ?? []).isNotEmpty) {
+        optionNames.add(_clean(a['name'].toString()));
+        continue;
+      }
       if (a is Map) {
         final terms = (a['terms'] as List? ?? []).map((t) => t is Map ? t['name'] : t).join('، ');
         if (terms.isNotEmpty) specs.add(MapEntry(_clean(a['name'].toString()), _clean(terms)));
@@ -165,6 +216,21 @@ class Product {
       if (sku.isEmpty) sku = code;
       name = name.substring(bar + 1).trim();
     }
+    // Options: the Store API lists them as {id, attributes}; prices/codes are
+    // merged in by Api under "_variants" (keyed by variation id).
+    final details = (j['_variants'] as Map?)?.cast<String, dynamic>() ?? {};
+    final variants = <Variant>[];
+    for (final v in (j['variations'] as List? ?? [])) {
+      if (v is! Map) continue;
+      final d = details['${v['id']}'];
+      if (d is! Map) continue;
+      final attrs = <String, String>{};
+      for (final a in (v['attributes'] as List? ?? [])) {
+        if (a is Map) attrs[_clean(a['name'].toString())] = _clean(a['value']?.toString() ?? '');
+      }
+      variants.add(Variant.fromJson(d.cast<String, dynamic>(), attrs));
+    }
+    if (sku.isEmpty && variants.isNotEmpty) sku = _seriesCode(variants.map((v) => v.sku).where((s) => s.isNotEmpty).toList());
     return Product(
       id: j['id'] as int,
       name: name,
@@ -178,8 +244,27 @@ class Product {
       permalink: j['permalink']?.toString() ?? '',
       specs: specs,
       featured: (j['featured'] ?? false) as bool,
+      variants: variants,
+      optionNames: optionNames,
     );
   }
+}
+
+/// Series code shared by all options (CF-IW006-0 / CF-IW006 / CF-IW006-2B → CF-IW006),
+/// or the first option's code when they share no clean prefix.
+String _seriesCode(List<String> skus) {
+  if (skus.isEmpty) return '';
+  var pre = skus.first;
+  for (final s in skus) {
+    var i = 0;
+    while (i < pre.length && i < s.length && pre[i] == s[i]) {
+      i++;
+    }
+    pre = pre.substring(0, i);
+  }
+  final clean = pre.endsWith('-') ? pre.substring(0, pre.length - 1) : pre;
+  final atBoundary = pre.endsWith('-') || skus.contains(pre);
+  return atBoundary && clean.contains('-') && clean.length >= 5 ? clean : skus.first;
 }
 
 num _pow10(int n) {

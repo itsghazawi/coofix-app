@@ -29,7 +29,7 @@ class MoreScreen extends StatelessWidget {
     final hours = cfg.s('contact.hours');
     final site = cfg.s('contact.website', Config.site);
     final services = <_Item>[
-      if (on('maintenance')) _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', tr('تتبّع الصيانة')), tr('تابع حالة عدّتك برقم الطلب أو الهاتف'), () => push(const MaintenanceScreen())),
+      _Item(Icons.build_circle_rounded, cfg.s('pages.maintenance_title', tr('تتبّع الصيانة')), tr('تابع حالة عدّتك برقم الطلب أو الهاتف'), () => push(const MaintenanceScreen())),
       _Item(Icons.favorite_rounded, tr('المفضلة'), tr('احفظ المنتجات التي تعجبك هنا'), () => push(const FavoritesScreen())),
       if (on('warranty')) _Item(Icons.shield_rounded, tr('الكفالة'), cfg.s('pages.warranty_title', tr('شروط الكفالة')), () => push(const WarrantyScreen())),
       if (on('traders')) _Item(Icons.storefront_rounded, tr('للتجار'), tr('أسعار الجملة والشراكات'),
@@ -281,13 +281,8 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
   @override
   void initState() {
     super.initState();
-    SharedPreferences.getInstance().then((p) {
-      final last = p.getString('repair_phone') ?? '';
-      if (last.isNotEmpty && mounted) {
-        code.text = last;
-        _lookup();
-      }
-    });
+    // The search box always starts empty; forget anything an older version saved.
+    SharedPreferences.getInstance().then((p) => p.remove('repair_phone'));
   }
 
   /// Input is either a repair code (CFX-0012, or just 12) or the customer's phone.
@@ -326,7 +321,6 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
           setState(() => error = isCode ? tr('لا يوجد طلب صيانة بهذا الرقم.') : tr('لا توجد طلبات صيانة مسجّلة على هذا الهاتف.'));
         } else {
           setState(() => results = items);
-          if (!isCode) (await SharedPreferences.getInstance()).setString('repair_phone', code.text.trim());
         }
       } else {
         setState(() => error = tr('خدمة تتبّع الصيانة غير متاحة حالياً.'));
@@ -378,7 +372,7 @@ class _MaintenanceScreenState extends State<MaintenanceScreen> {
               : Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.search_rounded, color: C.on(C.accent)),
                   const SizedBox(width: 8),
-                  Text(tr('عرض طلباتي'), style: T.h(16, c: C.on(C.accent))),
+                  Text(tr('عرض الصيانة'), style: T.h(16, c: C.on(C.accent))),
                 ]),
         ),
       ),

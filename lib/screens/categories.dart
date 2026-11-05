@@ -17,7 +17,7 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cats = Api.i.categories;
+    final cats = Api.i.topCategories;
     final top = MediaQuery.paddingOf(context).top;
     return CustomScrollView(
       physics: const BouncingScrollPhysics(),
@@ -119,8 +119,12 @@ class _CategoryTile extends StatelessWidget {
 }
 
 class CategoryProductsScreen extends StatefulWidget {
-  final Category c;
-  CategoryProductsScreen(this.c, {super.key});
+  final Category? c;
+  /// Shown as a bottom-bar tab (no back button, room for the bar).
+  final bool asTab;
+  CategoryProductsScreen(Category this.c, {super.key}) : asTab = false;
+  /// Every product in the store, as one browsable list.
+  const CategoryProductsScreen.all({super.key, this.asTab = true}) : c = null;
   @override
   State<CategoryProductsScreen> createState() => _CategoryProductsScreenState();
 }
@@ -129,9 +133,10 @@ enum _Sort { def, low, high, deal }
 
 class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   _Sort sort = _Sort.def;
+  Category? sub;
 
   List<Product> get items {
-    final l = [...Api.i.byCategory(widget.c.id)];
+    final l = widget.c == null ? [...Api.i.products] : [...Api.i.byCategory((sub ?? widget.c!).id)];
     switch (sort) {
       case _Sort.low:
         l.sort((a, b) => a.price.price.compareTo(b.price.price));
@@ -158,17 +163,18 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             expandedHeight: 170,
             backgroundColor: C.ink,
             foregroundColor: Colors.white,
-            leading: const _BackBtn(),
+            leading: widget.asTab ? null : const _BackBtn(),
+            automaticallyImplyLeading: !widget.asTab,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding: const EdgeInsetsDirectional.only(start: 60, bottom: 16, end: 20),
-              title: Text(widget.c.name, style: T.h(18, c: Colors.white)),
+              titlePadding: EdgeInsetsDirectional.only(start: widget.asTab ? 20 : 60, bottom: 16, end: 20),
+              title: Text(widget.c?.name ?? trf('كل المنتجات ({0})', [Api.i.products.length]), style: T.h(18, c: Colors.white)),
               background: Container(
                 decoration: BoxDecoration(gradient: C.inkGrad),
                 child: Stack(children: [
                   PositionedDirectional(
                     end: -20,
                     bottom: -30,
-                    child: Icon(categoryIcon(widget.c.slug, widget.c.name, widget.c.id), size: 190, color: C.accent.withValues(alpha: 0.12)),
+                    child: Icon(widget.c == null ? Icons.apps_rounded : categoryIcon(widget.c!.slug, widget.c!.name, widget.c!.id), size: 190, color: C.accent.withValues(alpha: 0.12)),
                   ),
                 ]),
               ),
@@ -203,6 +209,36 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               ),
             ),
           ),
+          if (widget.c != null && Api.i.childrenOf(widget.c!.id).isNotEmpty)
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 54,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final k in [null, ...Api.i.childrenOf(widget.c!.id)])
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: Pressable(
+                          onTap: () => setState(() => sub = k),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: sub?.id == k?.id ? C.accent : Colors.white,
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: sub?.id == k?.id ? C.accent : C.line),
+                            ),
+                            child: Text(k == null ? tr('الكل') : k.name, style: T.b(12.5, w: FontWeight.w700, c: sub?.id == k?.id ? C.on(C.accent) : C.text)),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           if (list.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
@@ -210,7 +246,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             )
           else
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 40),
+              padding: EdgeInsets.fromLTRB(16, 4, 16, widget.asTab ? 130 : 40),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,

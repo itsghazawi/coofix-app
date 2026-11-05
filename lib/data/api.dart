@@ -53,13 +53,30 @@ class Api {
   Future<void> _loadCatalogue() async {
     final prefs = await SharedPreferences.getInstance();
     try {
+      // Whole catalogue: the Store API returns at most 100 items per page,
+      // so walk every page. Options (variations) are fetched the same way and
+      // merged into their parent product under "_variants".
       final res = await Future.wait([
-        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products?per_page=100${Lang.q}'), headers: Lang.headers),
-        http.get(Uri.parse('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100${Lang.q}'), headers: Lang.headers),
-      ]).timeout(const Duration(seconds: 12));
-      if (res[0].statusCode == 200 && res[1].statusCode == 200) {
-        final p = utf8.decode(res[0].bodyBytes);
-        final c = utf8.decode(res[1].bodyBytes);
+        _allPages('${Config.site}/wp-json/wc/store/v1/products?per_page=100${Lang.q}'),
+        _allPages('${Config.site}/wp-json/wc/store/v1/products/categories?per_page=100${Lang.q}'),
+        _allPages('${Config.site}/wp-json/wc/store/v1/products?type=variation&per_page=100${Lang.q}'),
+      ]).timeout(const Duration(seconds: 45));
+      final prods = res[0], cats = res[1], vars = res[2];
+      if (prods != null && cats != null) {
+        if (vars != null && vars.isNotEmpty) {
+          final byParent = <int, Map<String, dynamic>>{};
+          for (final v in vars) {
+            if (v is! Map) continue;
+            final parent = v['parent'];
+            if (parent is! int) continue;
+            (byParent[parent] ??= {})['${v['id']}'] = v;
+          }
+          for (final pr in prods) {
+            if (pr is Map && byParent[pr['id']] != null) pr['_variants'] = byParent[pr['id']];
+          }
+        }
+        final p = jsonEncode(prods);
+        final c = jsonEncode(cats);
         _parse(p, c);
         if (products.isNotEmpty) {
           live = true;
@@ -86,6 +103,23 @@ class Api {
     }
     final demo = jsonDecode(await rootBundle.loadString('assets/demo.json')) as Map<String, dynamic>;
     _parse(jsonEncode(demo['products']), jsonEncode(demo['categories']));
+  }
+
+  /// Fetches every page of a Store API list (first page tells the page count).
+  Future<List<dynamic>?> _allPages(String url) async {
+    Future<http.Response> get(int page) => http.get(Uri.parse('$url&page=$page'), headers: Lang.headers);
+    final first = await get(1);
+    if (first.statusCode != 200) return null;
+    final out = <dynamic>[...(jsonDecode(utf8.decode(first.bodyBytes)) as List)];
+    final pages = int.tryParse(first.headers['x-wp-totalpages'] ?? '') ?? 1;
+    for (var start = 2; start <= pages; start += 4) {
+      final batch = await Future.wait([for (var pg = start; pg < start + 4 && pg <= pages; pg++) get(pg)]);
+      for (final r in batch) {
+        if (r.statusCode != 200) return null;
+        out.addAll(jsonDecode(utf8.decode(r.bodyBytes)) as List);
+      }
+    }
+    return out;
   }
 
   /// Panel rules: category names/order/hidden, out-of-stock filter.
@@ -181,12 +215,36 @@ class Api {
     final cats = (jsonDecode(c) as List).map((e) => Category.fromJson((e as Map).cast<String, dynamic>())).toList();
     _allLiveCats = cats.where((k) => k.slug != 'uncategorized').toList();
     // Show only categories that hold products, skip WooCommerce's default bucket.
-    categories = cats
-        .where((k) => k.slug != 'uncategorized' && products.any((p) => p.categories.any((pc) => pc.id == k.id)))
-        .toList();
+    categories = cats.where((k) => k.slug != 'uncategorized' && byCategory(k.id).isNotEmpty).toList();
   }
 
-  List<Product> byCategory(int id) => products.where((p) => p.categories.any((c) => c.id == id)).toList();
+  /// Category ids including all their sub-categories.
+  Set<int> _withChildren(int id) {
+    final out = {id};
+    var grew = true;
+    while (grew) {
+      grew = false;
+      for (final c in _allLiveCats) {
+        if (out.contains(c.parent) && out.add(c.id)) grew = true;
+      }
+    }
+    return out;
+  }
+
+  /// Main sections (no parent among the visible categories).
+  List<Category> get topCategories {
+    final ids = categories.map((c) => c.id).toSet();
+    return categories.where((c) => c.parent == 0 || !ids.contains(c.parent)).toList();
+  }
+
+  /// Visible sub-sections directly under a category.
+  List<Category> childrenOf(int id) => categories.where((c) => c.parent == id).toList();
+
+  /// Products of a category and of every sub-category under it.
+  List<Product> byCategory(int id) {
+    final ids = _withChildren(id);
+    return products.where((p) => p.categories.any((c) => ids.contains(c.id))).toList();
+  }
 
   List<Product> get featured {
     final count = Cfg.i.n('products.featured_count', 8).clamp(1, 60);
@@ -223,6 +281,7 @@ class Api {
             p.name.toLowerCase().contains(s) ||
             p.categoryName.toLowerCase().contains(s) ||
             p.sku.toLowerCase().contains(s) ||
+            p.variants.any((v) => v.sku.toLowerCase().contains(s)) ||
             p.shortDesc.toLowerCase().contains(s))
         .toList();
   }
@@ -230,6 +289,12 @@ class Api {
   Product? byId(int id) {
     for (final p in [...products, ..._allProducts]) {
       if (p.id == id) return p;
+    }
+    // An option (variation) saved in the cart: rebuild it from its parent.
+    for (final p in [...products, ..._allProducts]) {
+      for (final v in p.variants) {
+        if (v.id == id) return p.forVariant(v);
+      }
     }
     return null;
   }

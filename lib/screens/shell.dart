@@ -57,7 +57,7 @@ class _ShellState extends State<Shell> {
   @override
   Widget build(BuildContext context) {
     if (Cfg.i.b('general.maintenance.enabled')) return const MaintenanceModeScreen();
-    final pages = const [HomeScreen(), CategoriesScreen(), CartScreen(), MaintenanceScreen(), MoreScreen()];
+    final pages = const [HomeScreen(), CategoriesScreen(), CartScreen(), CategoryProductsScreen.all(), MoreScreen()];
     return PopScope(
       canPop: tab == 0,
       onPopInvokedWithResult: (did, _) {
@@ -104,7 +104,7 @@ class _NavBar extends StatelessWidget {
         (Icons.home_rounded, Icons.home_outlined, Cfg.i.s('nav.home', tr('الرئيسية'))),
         (Icons.grid_view_rounded, Icons.grid_view_outlined, Cfg.i.s('nav.categories', tr('الأقسام'))),
         (Icons.shopping_bag_rounded, Icons.shopping_bag_outlined, Cfg.i.s('nav.cart', tr('السلة'))),
-        (Icons.build_rounded, Icons.build_outlined, Cfg.i.s('nav.maintenance', tr('الصيانة'))),
+        (Icons.apps_rounded, Icons.apps_outlined, tr('كل المنتجات')),
         (Icons.menu_rounded, Icons.menu_rounded, Cfg.i.s('nav.more', tr('المزيد'))),
       ];
 

@@ -22,14 +22,23 @@ class ProductScreen extends StatefulWidget {
 class _ProductScreenState extends State<ProductScreen> {
   int qty = 1;
   int img = 0;
+  Variant? sel;
 
-  Product get p => widget.p;
+  @override
+  void initState() {
+    super.initState();
+    sel = widget.p.defaultVariant;
+  }
+
+  /// The product as shown/ordered: the chosen option when there are options.
+  Product get p => sel == null ? widget.p : widget.p.forVariant(sel!);
+  Product get base => widget.p;
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final bottom = MediaQuery.paddingOf(context).bottom;
-    final related = Api.i.products.where((x) => x.id != p.id && x.categoryName == p.categoryName).take(6).toList();
+    final related = Api.i.products.where((x) => x.id != base.id && x.categoryName == base.categoryName).take(6).toList();
     final imgs = p.images;
     final cart = Cfg.i.b('products.allow_cart', true);
     final parse = Cfg.i.b('products.parse_specs_from_description', true);
@@ -54,7 +63,7 @@ class _ProductScreenState extends State<ProductScreen> {
                     child: imgs.length <= 1
                         ? Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 30),
-                            child: Hero(tag: _heroTag(context), child: ProductImage(p, radius: 28, iconSize: 80)),
+                            child: Hero(tag: _heroTag(context), child: ProductImage(base, radius: 28, iconSize: 80)),
                           )
                         : PageView.builder(
                             itemCount: imgs.length,
@@ -106,9 +115,18 @@ class _ProductScreenState extends State<ProductScreen> {
                         Align(alignment: AlignmentDirectional.centerStart, child: SkuTag(p.sku)),
                         const SizedBox(height: 12),
                       ],
-                      Text(p.name, style: T.h(23, height: 1.4)),
+                      Text(base.name, style: T.h(23, height: 1.4)),
                       const SizedBox(height: 16),
                       PriceView(p.price, size: 24, color: C.ink),
+                      if (base.hasOptions) ...[
+                        const SizedBox(height: 22),
+                        _Options(
+                          title: base.optionNames.isEmpty ? tr('اختر') : base.optionNames.join(' / '),
+                          variants: base.variants,
+                          selected: sel,
+                          onPick: (v) => setState(() => sel = v),
+                        ),
+                      ],
                       const SizedBox(height: 22),
                       const _Perks(),
                       if (specs.isNotEmpty) ...[
@@ -176,11 +194,11 @@ class _ProductScreenState extends State<ProductScreen> {
             ListenableBuilder(
               listenable: Store.i,
               builder: (_, _) {
-                final on = Store.i.isFav(p);
+                final on = Store.i.isFav(base);
                 return _RoundBtn(
                   icon: on ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                   color: on ? C.accent : C.text,
-                  onTap: () => Store.i.toggleFav(p),
+                  onTap: () => Store.i.toggleFav(base),
                 );
               },
             ),
@@ -240,7 +258,7 @@ class _ProductScreenState extends State<ProductScreen> {
     // Matches the tag used by whichever ProductCard opened this screen.
     final route = ModalRoute.of(context);
     final tag = route?.settings.arguments as String?;
-    return '${tag ?? 'feat'}-${p.id}';
+    return '${tag ?? 'feat'}-${base.id}';
   }
 }
 
@@ -249,6 +267,46 @@ String _about(Product p) {
   if (a.isEmpty) return b;
   if (b.isEmpty || b.contains(a) || a.contains(b)) return a.length >= b.length ? a : b;
   return '$a\n$b';
+}
+
+/// Option picker (battery kit, size…): one chip per option with its code.
+class _Options extends StatelessWidget {
+  final String title;
+  final List<Variant> variants;
+  final Variant? selected;
+  final ValueChanged<Variant> onPick;
+  const _Options({required this.title, required this.variants, required this.selected, required this.onPick});
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title, style: T.h(16)),
+      const SizedBox(height: 12),
+      Wrap(spacing: 10, runSpacing: 10, children: [
+        for (final v in variants)
+          Pressable(
+            scale: 0.95,
+            onTap: () => onPick(v),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: v.id == selected?.id ? C.ink : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: v.id == selected?.id ? C.ink : C.line, width: 1.4),
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(v.label.isEmpty ? v.sku : v.label,
+                    style: T.b(13.5, w: FontWeight.w700, c: v.id == selected?.id ? Colors.white : (v.inStock ? C.text : C.muted))),
+                if (v.sku.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(v.sku, textDirection: TextDirection.ltr, style: T.b(11, w: FontWeight.w700, c: v.id == selected?.id ? C.accent : C.muted)),
+                ],
+              ]),
+            ),
+          ),
+      ]),
+    ]);
+  }
 }
 
 class _RoundBtn extends StatelessWidget {
